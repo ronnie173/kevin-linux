@@ -58,7 +58,7 @@ struct tm strToTm(const char *strDate) {
  
 int main(void) {
     char expires[] = "Sat, 13 Nov 2008 23:29:00 GMT";
-    struct tm tmDate1, *tmDate2;
+    struct tm tmDate1, tmDate2;
     char strDate[64] = { 0 };
     char strTimeT[9] = { 0 };
     time_t tmpTime1, tmpTime2, now;
@@ -90,14 +90,14 @@ int main(void) {
     printf("time_t tmpTime2 ctime str is [%s]\n", ctime(&tmpTime2));
     
     // Convert time_t to struct tm
-    tmDate2 = localtime(&tmpTime2);
-    strftime(strDate, 64, "%d/%m/%Y %I:%M:%S %p", tmDate2);
+    localtime_r(&tmpTime2, &tmDate2);
+    strftime(strDate, 64, "%d/%m/%Y %I:%M:%S %p", &tmDate2);
     printf("struct tm tmDate2 string is [%s]\n", strDate);
     
     // get current system time
     now = time(NULL);
-    tmDate2 = localtime(&now);
-    strftime(strDate, 64, "%d/%m/%Y %I:%M:%S %p", tmDate2);
+    localtime_r(&now, &tmDate2);
+    strftime(strDate, 64, "%d/%m/%Y %I:%M:%S %p", &tmDate2);
     printf("struct tm tmDate2 string is [%s]\n", strDate);
     printf("time_t now ctime str is [%s]\n", ctime(&now));
 
