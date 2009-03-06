@@ -1,6 +1,6 @@
 /*
 Two ways for cookie expiration: "Expires" and "Max-Age".
-No mojor browsers such as IE, Firefox support "Max-Age" so we only need to consider "Expires" for now.
+No major browsers such as IE, Firefox support "Max-Age" so we only need to consider "Expires" for now.
 
 The expiration date is specified in the "Wdy, DD-Mon-YYYY HH:MM:SS GMT" format (Greenwich Mean Time (GMT) format)
 
