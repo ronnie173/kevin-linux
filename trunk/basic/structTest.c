@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
 }
 
 int dumpName(const name_t *tmp) {
+    printf("in file %s, at line %d\n", __FILE__, __LINE__);
     printf("first: [%s], last: [%s]\n", tmp->firstName, tmp->lastName);
     return 0;
 }
