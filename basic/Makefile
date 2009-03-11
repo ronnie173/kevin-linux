@@ -4,7 +4,7 @@ LIB_OBJS =
 
 CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~
 
-PROGS =	structTest sortTest strTest
+PROGS =	structTest sortTest strTest funcTest arrayTest
 
 all:	${PROGS}
 
@@ -16,6 +16,12 @@ sortTest:	sortTest.o
 
 strTest:	strTest.o
 	${CC} ${CFLAGS} -o $@ strTest.o
+
+funcTest:	funcTest.o
+	${CC} ${CFLAGS} -o $@ funcTest.o
+
+arrayTest:	arrayTest.o
+	${CC} ${CFLAGS} -o $@ arrayTest.o
 
 myzip:
 	tar cvzf basic.tgz Makefile README *.c *.h
