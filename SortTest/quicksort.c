@@ -22,6 +22,19 @@ int randint(int l, int u) {
     return l + (RAND_MAX * rand() + rand()) % (u-l+1);
 }
 
+void qsort1(int l, int u) {
+    int i, m;
+    if (l >= u)
+        return;
+    m = l;
+    for (i = l+1; i <= u; i++)
+        if (x[i] < x[l])
+            swap(++m, i);
+    swap(l, m);
+    qsort1(l, m-1);
+    qsort1(m+1, u);
+}
+
 void quicksort(int l, int u) {
     int i, m;
 
@@ -49,7 +62,8 @@ int main() {
         x[i] = randint(0, mod - 1);
 
     start = clock();
-    quicksort(0, n - 1);
+    //quicksort(0, n - 1);
+    qsort1(0, n - 1);
 
     clicks = clock() - start;
 
