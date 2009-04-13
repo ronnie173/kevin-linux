@@ -1,0 +1,4 @@
+v1.0.1:
+- Updated docs with OpenSSL example
+v1.0.2:
+- Added -storetype flag [Thanks to Rick Lawson <rick.lawson@rbc.com>]

@@ -1,0 +1,2 @@
+java -jar ./pkeytool.jar "$@"
+
