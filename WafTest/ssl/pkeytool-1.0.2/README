@@ -1,0 +1,95 @@
+What is it?
+
+    The keytool that ships with the JDK does not allow you to import or
+    export private keys. pkeytool takes over where keytool leaves off by
+    allowing you to work with private keys. pkeytool will only work with
+    Java v1.4 or later.
+
+    Please make sure you are using the newest version, available at:
+
+    http://pkeytool.couchpotato.net
+
+    pkeytool is Copyright 2003 Green Automation, Inc.
+
+    pkeytool is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    pkeytool is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with pkeytool; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+    Private keys that are exported using the -rfc parameter are in
+    unencrypted PKCS#8 format. They are compatible with OpenSSL's
+    'pkcs8' command with the '-nocrypt' parameter. See Example #2
+    below.
+
+    If you modify pkeytool in a way that might be useful to others,
+    please send me a patch file at my address below.
+
+    I cannot provide any technical support. If you find bugs, or have
+    suggestions, feel free to drop me an email at my address below.
+
+Installation:
+
+    1) Unzip the archive to a permanent location.
+    2) Write a script called 'pkeytool', and place it in your PATH, such as:
+
+       #!/bin/sh
+       /path/to/java -jar /path/to/pkeytool.jar "$@"
+
+    3) Don't forget to make your script executable (chmod +x pkeytool)
+    4) Test your installation by typing 'pkeytool'. You should see the
+       usage screen.
+
+Example #1:
+
+    $ keytool -genkey -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown" -storepass changeit -keypass changeit
+    $ pkeytool -list 
+    mykey, Mar 6, 2003, keyEntry
+    Certificate fingerprint (MD5): 62:B0:0B:AD:96:D6:D9:36:6A:32:41:4D:E6:32:9F:83
+    $ keytool -export -file foo.cer -storepass changeit
+    Certificate stored in file <foo.cer>
+    $ pkeytool -exportkey -file foo.key -storepass changeit
+    $ keytool -delete -alias mykey -storepass changeit
+    $ pkeytool -importkey -keyfile foo.key -certfile foo.cer -storepass changeit -keypass changeit
+    $ pkeytool -list
+    mykey, Mar 6, 2003, keyEntry
+    Certificate fingerprint (MD5): 62:B0:0B:AD:96:D6:D9:36:6A:32:41:4D:E6:32:9F:83
+
+Example #2 (OpenSSL):
+
+    Export the certificate:
+
+        keytool -export -storepass changeit -rfc -file foo.cer
+
+    Export the key in Unencrypted PKCS#8 format:
+
+        pkeytool -exportkey -storepass changeit -rfc -file foo.key
+
+    Remove the key from the keystore:
+
+        keytool -delete -alias mykey -storepass changeit
+    
+    Convert to Traditional Format using OpenSSL:
+
+        openssl pkcs8 -nocrypt < foo.key > bar.key
+
+    Convert back to Unecrypted PKCS#8 format:
+    
+        openssl pkcs8 -nocrypt -topk8 < bar.key > baz.key
+
+    Import the key back into the keystore:
+
+        pkeytool -importkey -keyfile baz.key -certfile foo.cer
+                 -storepass changeit -keypass changeit
+    
+Cheers,
+    
+David Green <green@couchpotato.net>
