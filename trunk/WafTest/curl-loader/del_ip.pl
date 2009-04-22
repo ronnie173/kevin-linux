@@ -25,7 +25,7 @@ my $addr;
 my $ipaddr;
 
 foreach $addr ($start .. $end) {
-    my $ipaddr = "ip addr delete $prefix$addr/$mask dev $dev";
+    $ipaddr = "ip addr delete $prefix$addr/$mask dev $dev";
     print "$ipaddr\n";
     system($ipaddr);
 }
