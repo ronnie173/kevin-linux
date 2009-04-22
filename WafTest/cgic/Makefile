@@ -4,7 +4,7 @@ AR=ar
 RANLIB=ranlib
 LIBS=-L./ -lcgic
 
-all: libcgic.a cgictest.cgi capture
+all: libcgic.a cgictest.cgi capture test_post.cgi
 
 install: libcgic.a
 	cp libcgic.a /usr/local/lib
@@ -20,6 +20,9 @@ libcgic.a: cgic.o cgic.h
 
 cgictest.cgi: cgictest.o libcgic.a
 	gcc cgictest.o -o cgictest.cgi ${LIBS}
+
+test_post.cgi: test_post.o libcgic.a
+	gcc test_post.o -o test_post.cgi ${LIBS}
 
 capture: capture.o libcgic.a
 	gcc capture.o -o capture ${LIBS}
