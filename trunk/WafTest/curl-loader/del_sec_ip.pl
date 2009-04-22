@@ -33,8 +33,8 @@ my $numArgs = $#ARGV + 1;
 print "I see $numArgs arguments.\n";
 
 if ($numArgs < 1) {
-    print "del_ip.pl dev\n";
-    print "del_ip.pl eth0\n";
+    print "Usage: del_ip.pl <dev>\n";
+    print "Example: del_ip.pl eth0\n";
     exit 1;
 }
 
