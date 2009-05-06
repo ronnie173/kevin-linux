@@ -34,5 +34,5 @@ capture: capture.o libcgic.a
 	gcc capture.o -o capture ${LIBS}
 
 clean:
-	rm -f *.o *.a cgictest.cgi capture
+	rm -f *.o *.a *.cgi capture
 
