@@ -1,0 +1,71 @@
+body { 
+  background-color: #eaf3da;
+  font-family: Verdana, Geneva, Arial, sans-serif;
+  font-size: small;
+  line-height: 1.6em;
+}
+
+a {
+  font-size: 150%;
+}
+
+a:link {
+  color: #007e7e;
+}
+
+a:visited {
+  color: #333333;
+}
+
+a:hover {
+  color: #0d5353;
+  background: #f88396;
+}
+
+h1 {
+  font-weight: normal;
+  font-size: 170%;
+  color: #cc6600;
+  #text-decoration: underline;
+  border-bottom: thin dashed #888888;
+}
+
+.leftIcon {
+  background-image: url(../images/1kicons/Aqua/Aqua07.jpg);
+  #background-image: url(../images/saving.gif);
+  background-repeat: no-repeat;
+  background-position: left;
+  padding-top: 150px;
+  padding-left: 150px;
+}
+
+table {
+  margin-left: 20px;
+  margin-right: 20px;
+  border: thin solid black;
+  caption-side: bottom;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: thin dotted gray;
+  padding: 5px;
+}
+
+th {
+  background-color: #cc6600;
+}
+
+caption {
+  font-style: italic;
+  padding-top: 8px;
+}
+
+.cellcolor {
+  background-color: #fcba7a;
+}
+
+#srvList {
+  width: 200px;
+  float: right;
+}
