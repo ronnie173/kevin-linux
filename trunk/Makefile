@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -Wall
 LIB_OBJS =
 
-SUBDIRS = basic TimeTest
+SUBDIRS = basic TimeTest JSonTest
 PROGS =	structTest sortTest
 
 all:
