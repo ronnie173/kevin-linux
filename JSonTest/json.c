@@ -2375,6 +2375,7 @@ json_parse_document (json_t ** root, char *text)
 
 	assert (root != NULL);
 	assert (*root == NULL);
+    //assert (*root != NULL);
 	assert (text != NULL);
 
 	/* initialize the parsing structure */

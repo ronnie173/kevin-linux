@@ -4,21 +4,24 @@ LIB_OBJS =
 
 CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~ *.stackdump
 
-PROGS =	qsortints sortTest quicksort
+PROGS = json_test
 
 all:	${PROGS}
 
-qsortints:	qsortints.o
-	${CC} ${CFLAGS} -o $@ qsortints.o
+json.o:	json.c json.h
+	${CC} ${CFLAGS} -c $<
     
-sortTest:	sort.o
-	${CC} ${CFLAGS} -o $@ sort.o
+json_helper.o:	json_helper.c json_helper.h
+	${CC} ${CFLAGS} -c $<
 
-quicksort:	quicksort.o
-	${CC} ${CFLAGS} -o $@ quicksort.o
+json_test.o:	json_test.c
+	${CC} ${CFLAGS} -c $<
+
+json_test:	json_test.o json.o json_helper.o
+	${CC} ${CFLAGS} $^ -o $@  
 
 myzip:
-	tar cvzf sortTest.tgz Makefile README *.c *.h
+	tar cvzf JSonTest.tgz Makefile README *.c *.h
 
 clean:
 	rm -f ${PROGS} ${CLEANFILES}
