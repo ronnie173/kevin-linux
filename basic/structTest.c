@@ -14,11 +14,11 @@ typedef struct _name_t {
 int nameStructTest();
 int convertTest();
 int dumpName(const name_t *tmp);
- 
+
 int main(int argc, char *argv[]) {
     nameStructTest();
     convertTest();
-    
+
     return 0;
 }
 
@@ -38,7 +38,7 @@ int nameStructTest() {
 
     three = (name_t) { "Yin", "Nawei" };
     dumpName(&three);
-    
+
     four = (name_t) { lastName: "Zhang", firstName: "Ryan" };
     dumpName(&four);
 
@@ -48,23 +48,23 @@ int nameStructTest() {
 int convertTest() {
     char *p = NULL;
     name_t *tp = NULL;
-    
+
     p = malloc(100);
     bzero(p, 100);
     tp = (name_t*)p;
-    
+
     strcpy(tp->lastName, "Guo");
     strcpy(tp->firstName, "Zhang");
-    
+
     dumpName(tp);
-    
+
     return 0;
 }
 
 int dumpName(const name_t *tmp) {
     printf("in file %s, at line %d\n", __FILE__, __LINE__);
-    if (NULL == temp) return 0;
-    
+    if (NULL == tmp) return 0;
+
     printf("first: [%s], last: [%s]\n", tmp->firstName, tmp->lastName);
     return 0;
 }
