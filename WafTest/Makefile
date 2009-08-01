@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -Wall
 LIB_OBJS =
 
-SUBDIRS = 
+SUBDIRS = cgic
 PROGS =	
 
 all:
