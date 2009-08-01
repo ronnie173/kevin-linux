@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<LinuxboxFormat>
+  <Common>
+    <FormatDef name="EnglishNameFormat">fIRST lAST</FormatDef>
+    <FormatDef name="ChineseNameFormat">lASTfIRST</FormatDef>
+    <FormatDef name="PostgresTimestamp">yyyy-MM-dd HH:mm:sszzz</FormatDef>
+
+    <!-- When change the database, need to take care 
+      the following format -->
+    <!-- mySQL timestamp format is "YYYY-MM-DD HH:MM:SS" and
+        postGresql timestamp format is "yyyy-MM-dd HH:mm:sszzz"-->
+    <FormatDef name="DBTimestamp">yyyy-MM-dd HH:mm:ss</FormatDef>
+    <FormatDef name="DBDate">yyyy-MM-dd</FormatDef>
+    <FormatDef name="DBTime">HH:mm:ss</FormatDef>
+  </Common>
+</LinuxboxFormat>

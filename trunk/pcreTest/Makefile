@@ -12,7 +12,7 @@ first_pcre:	first_pcre.o
 	${CC} ${CFLAGS} -o $@ first_pcre.o -lpcre
     
 myzip:
-	tar cvzf sortTest.tgz Makefile README *.c *.h
+	tar cvzf pcreTest.tgz Makefile README *.c *.h
 
 clean:
 	rm -f ${PROGS} ${CLEANFILES}
