@@ -2,8 +2,7 @@ CC = gcc
 CFLAGS = -g -Wall
 LIB_OBJS =
 
-SUBDIRS = basic TimeTest JSonTest
-PROGS =	structTest sortTest
+SUBDIRS = basic TimeTest JSonTest SortTest xmlTest WafTest pcreTest
 
 all:
 	@for i in $(SUBDIRS); do \
