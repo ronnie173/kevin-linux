@@ -13,15 +13,35 @@
 #include "jsonUtil.h"
 
 int main (void) {
-    loadJSonFile("./param_list.json");
+    loadParamList("./param_list.json");
 
     return 0;
 }
 
-int loadJSonFile(char* fn) {
+int loadParamList(char *fn) {
+    json_t *root = NULL;
+    int ret = loadJSonFile(fn, &root);
+    if (ret) {
+        printf("failed to load param list\n");
+        return 1;
+    }
+    
+    char *buf = malloc(1000);
+    bzero(buf, 1000);
+    printf("Printing the document tree...\n");
+    json_tree_to_string(root, &buf);
+    //printf("root type is %d and test is %s\n", root->type, root->text);
+    printf("%s\n", buf);
+    free(buf);
+    json_free_value(&root);
+
+    return 0;
+}
+
+int loadJSonFile(char* fn, json_t **root) {
     int err;
 
-    printf("%s", "====== Tree Test 1 Starts =======\n");
+    printf("%s\n", "====== get into loadJSonFile =======\n");
 
     setlocale (LC_ALL, "");
     //char *document = "{\"entry\":{\"name\":\"Andew\",\"phone\":\"555 123 456\"}}";
@@ -52,27 +72,18 @@ int loadJSonFile(char* fn) {
         return 1;
     }
 
-    json_t *root = NULL;
-    //json_t *root = json_new_object();
-    if (NULL == root) {
-        printf("%s\n", "new json object failed");
-    }
     printf("Parsing the document...\n");
-    err = json_parse_document(&root, document);
-    if (err != JSON_OK) {
-        printf("%s, err=%d\n", "parse error", err);
-        goto cleanup;
-    }
-    printf("Printing the document tree...\n");
-    json_tree_to_string(root, &document);
-    printf("%s\n", document);
-
-    // clean up
-cleanup:
-    json_free_value(&root);
+    err = json_parse_document(root, document);
+    //printf("root type is %d and test is %s\n", (*root)->type, (*root)->text);
     free(document);
     close(fd);
-    printf("%s", "====== Tree Test 1 Ends =======\n");
+    //printf("root type is %d and test is %s\n", (*root)->type, (*root)->text);
+
+    if (err != JSON_OK) {
+        printf("%s, err=%d\n", "parse error", err);
+        json_free_value(root);
+        return 1;
+    }
 
     return 0;
 }
