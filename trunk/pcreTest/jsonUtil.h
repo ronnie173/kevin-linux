@@ -5,7 +5,8 @@
 extern "C" {
 #endif
 
-int loadJSonFile(char *fn);
+int loadJSonFile(char *fn, json_t **root);
+int loadParamList(char *fn);
 
 #ifdef __cplusplus
 }
