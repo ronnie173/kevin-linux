@@ -7,6 +7,7 @@ extern "C" {
 
 int loadJSonFile(char *fn, json_t **root);
 int loadParamList(char *fn);
+int dumpJSonTree(json_t *root, char *buf, char *tmpStr);
 
 #ifdef __cplusplus
 }
