@@ -11,10 +11,13 @@ all:	${PROGS}
 json.o:	json.c json.h
 	${CC} ${CFLAGS} -c $<
 
+jsoni_helper.o:	json_helper.c json_helper.h
+	${CC} ${CFLAGS} -c $<
+
 jsonUtil.o:	jsonUtil.c jsonUtil.h json.c json.h
 	${CC} ${CFLAGS} -c $<
 
-json_util:	jsonUtil.o json.o
+json_util:	jsonUtil.o json.o json_helper.o
 	${CC} ${CFLAGS} $^ -o $@
 
 first_pcre:	first_pcre.o

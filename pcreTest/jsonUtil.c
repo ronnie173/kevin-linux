@@ -1,3 +1,8 @@
+/* study json_render_tree
+ *
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -10,7 +15,7 @@
 #include <sys/stat.h>
 
 #include "json.h"
-//#include "json_helper.h"
+#include "json_helper.h"
 #include "jsonUtil.h"
 
 int main (void) {
@@ -36,6 +41,7 @@ int loadParamList(char *fn) {
     free(buf);
 
     printf("root type is %d and text is [%s]\n", root->type, root->text);
+    json_render_tree(root);
 
     json_t *node = root;
     char tmpStr[100];
