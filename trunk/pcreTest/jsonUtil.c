@@ -26,14 +26,15 @@ int loadParamList(char *fn) {
         printf("failed to load param list\n");
         return 1;
     }
-    
-    char *buf = malloc(1000);
-    bzero(buf, 1000);
+
+    char *buf = NULL;
+    //char *buf = malloc(1000);
+    //bzero(buf, 1000);
     printf("Printing the document tree...\n");
     json_tree_to_string(root, &buf);
     printf("%s\n", buf);
     free(buf);
-    
+
     printf("root type is %d and text is [%s]\n", root->type, root->text);
 
     json_t *node = root;
@@ -42,20 +43,20 @@ int loadParamList(char *fn) {
     buf = malloc(1000);
     //bzero(buf, 1000 - 1);
     memset(buf, 0, 1000);
-    
+
     dumpJSonTree(node, buf, tmpStr);
     //if (JSON_OBJECT != node->type || strcmp("ParamList", node->text)) {
     //    printf("the paramlist file is wrong\n");
     //    printf("root type is %d and text is [%s]\n", node->type, node->text);
     //} else {
     //    printf("node type is %d and text is [%s]\n", node->type, node->text);
-        
+
     //    for (node = node->child; NULL != node; node = node->next) {
     //        printf("node type is %d and text is [%s]\n", node->type, node->text);
     //    }
     //}
     printf("TREE:\n%s\n", buf);
-    
+
     free(buf);
     json_free_value(&root);
 
@@ -115,17 +116,17 @@ int loadJSonFile(char* fn, json_t **root) {
 int dumpJSonTree(json_t *root, char *buf, char *tmpStr) {
     json_t *node = root;
     bzero(tmpStr, 100);
-    
+
     if (NULL == node) return 0;
     sprintf(tmpStr, "node type is %d and text is [%s]\n", node->type, node->text);
     strncat(buf, tmpStr, 100);
-    
+
     if (NULL != node->child) dumpJSonTree(node->child, buf, tmpStr);
 
     for (node = node->next; NULL != node; node = node->next) {
         sprintf(tmpStr, "sible node type is %d and text is [%s]\n", node->type, node->text);
         strncat(buf, tmpStr, 100);
     }
-    
+
     return 0;
 }
