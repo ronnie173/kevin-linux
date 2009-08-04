@@ -127,11 +127,10 @@ int dumpJSonTree(json_t *root, char *buf, char *tmpStr) {
     sprintf(tmpStr, "node type is %d and text is [%s]\n", node->type, node->text);
     strncat(buf, tmpStr, 100);
 
-    if (NULL != node->child) dumpJSonTree(node->child, buf, tmpStr);
-
-    for (node = node->next; NULL != node; node = node->next) {
-        sprintf(tmpStr, "sible node type is %d and text is [%s]\n", node->type, node->text);
-        strncat(buf, tmpStr, 100);
+    if (NULL != node->child) {
+        for (node = node->child; NULL != node; node = node->next) {
+            dumpJSonTree(node, buf, tmpStr);
+        }
     }
 
     return 0;
