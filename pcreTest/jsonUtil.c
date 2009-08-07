@@ -19,12 +19,15 @@
 #include "jsonUtil.h"
 
 int main (void) {
-    loadParamList("./param_list.json");
+    nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
+    
+    loadParamList("./param_list.json", paramList, MAX_PAIR_ARRAY_LEN);
+    dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
 
     return 0;
 }
 
-int loadParamList(char *fn) {
+int loadParamList(char *fn, nameValuePair_t list[], int alen) {
     json_t *root = NULL;
     int ret = loadJSonFile(fn, &root);
     if (ret) {
@@ -51,19 +54,34 @@ int loadParamList(char *fn) {
     memset(buf, 0, 1000);
 
     dumpJSonTree(node, buf, tmpStr);
-    //if (JSON_OBJECT != node->type || strcmp("ParamList", node->text)) {
-    //    printf("the paramlist file is wrong\n");
-    //    printf("root type is %d and text is [%s]\n", node->type, node->text);
-    //} else {
-    //    printf("node type is %d and text is [%s]\n", node->type, node->text);
-
-    //    for (node = node->child; NULL != node; node = node->next) {
-    //        printf("node type is %d and text is [%s]\n", node->type, node->text);
-    //    }
-    //}
     printf("TREE:\n%s\n", buf);
 
     free(buf);
+    
+    /* try to parse param_list.json */
+    /* check ParamList tag */
+    node = node->child;
+    if (JSON_STRING != node->type || strcmp("ParamList", node->text)) {
+        printf("the paramlist file is wrong\n");
+        printf("root type is %d and text is [%s]\n", node->type, node->text);
+    } else {
+        /* try to get name/value pairs */
+        json_t *valNode = NULL;
+        int count = 0;
+        for (node = node->child->child; 
+                NULL != node && count < alen; 
+                node = node->next) {
+            /* get name */
+            printf("node type is %d and text is [%s]\n", node->type, node->text);
+            strncpy(list[count].name, node->text, MAX_NAME_LEN); 
+            /* get name */
+            valNode = node->child;
+            printf("node type is %d and text is [%s]\n", valNode->type, valNode->text);
+            strncpy(list[count].value, valNode->text, MAX_VALUE_LEN); 
+            count++;
+        }
+    }
+
     json_free_value(&root);
 
     return 0;
@@ -133,5 +151,14 @@ int dumpJSonTree(json_t *root, char *buf, char *tmpStr) {
         }
     }
 
+    return 0;
+}
+
+int dumpParamList(nameValuePair_t list[], int len) {
+    int i;
+    for (i = 0; i < len; i++) {
+        printf("name is [%s] and value is [%s]\n", list[i].name, list[i].value);
+    }
+    
     return 0;
 }
