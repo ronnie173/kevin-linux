@@ -76,5 +76,59 @@ int paramTest(const char *fn) {
     loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
     dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
     
+    pcre *re;
+    const char *error;
+    int err_offset;
+
+    char *regex = "^From: ([^@]+)@([^\r]+)";
+    re = pcre_compile(regex, 0, &error, &err_offset, NULL);
+
+    if (!re) {
+        printf("PCRE compilation failed at offset %d: %s\n", err_offset, error);
+        return 1;
+    }
+
+
+    pcre_free(re);
+
+    return 0;
+}
+
+int doMatch(pcre* re, nameValuePair_t paramList[], int alen) {
+    int ovector[OVEC_COUNT];
+    int rc;
+
+    rc = pcre_exec(re, NULL, data, strlen(data), 0, 0, ovector, OVEC_COUNT);
+
+    if (rc < 0) {
+        switch (rc) {
+        case PCRE_ERROR_NOMATCH :
+            printf("No match found in text\n");
+            break;
+
+        default :
+            printf("Match eror %d\n", rc);
+            break;
+
+        }
+
+        pcre_free(re);
+        return 1;
+    }
+
+    if (rc < 3) {
+        printf("Match did not catch all the groups\n");
+    } else {
+        /* ovector[0] .. ovector[1] ar the entire matched string */
+        char *name_start = data + ovector[2];
+        int name_length = ovector[3] - ovector[2];
+
+        char *domain_start = data + ovector[4];
+        int domain_length = ovector[5] - ovector[4];
+
+        printf("Mail from: %.*s domain: %.*s\n", name_length, name_start,
+                domain_length, domain_start);
+    }
+
     return 0;
 }
