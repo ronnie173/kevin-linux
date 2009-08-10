@@ -2,8 +2,21 @@
 #include <string.h>
 #include <pcre.h>
 
+#include "jsonUtil.h"
+
 #define OVEC_COUNT 30 /* should be a multiple of 3 */
+
+int basicTest();
+int paramTest(const char *fn);
+
 int main(int argc, char *argv[]) {
+    basicTest();
+    paramTest("./param_list.json");
+    
+    return 0;
+}
+
+int basicTest() {
     pcre *re;
     const char *error;
     int err_offset;
@@ -54,5 +67,14 @@ int main(int argc, char *argv[]) {
 
     pcre_free(re);
 
+    return 0;
+}
+
+int paramTest(const char *fn) {
+    nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
+    
+    loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
+    dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
+    
     return 0;
 }
