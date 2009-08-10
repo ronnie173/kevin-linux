@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include "json.h"
+
 #define MAX_NAME_LEN 100
 #define MAX_VALUE_LEN 100
 #define MAX_PAIR_ARRAY_LEN 3
@@ -14,8 +16,8 @@ typedef struct nameValuePair {
     char value[MAX_VALUE_LEN];
 } nameValuePair_t;
 
-int loadJSonFile(char *fn, json_t **root);
-int loadParamList(char *fn, nameValuePair_t list[], int alen);
+int loadJSonFile(const char *fn, json_t **root);
+int loadParamList(const char *fn, nameValuePair_t list[], int alen);
 int dumpJSonTree(json_t *root, char *buf, char *tmpStr);
 int dumpParamList(nameValuePair_t list[], int len);
 

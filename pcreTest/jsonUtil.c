@@ -18,6 +18,7 @@
 #include "json_helper.h"
 #include "jsonUtil.h"
 
+/*
 int main (void) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
     
@@ -25,9 +26,9 @@ int main (void) {
     dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
 
     return 0;
-}
+}*/
 
-int loadParamList(char *fn, nameValuePair_t list[], int alen) {
+int loadParamList(const char *fn, nameValuePair_t list[], int alen) {
     json_t *root = NULL;
     int ret = loadJSonFile(fn, &root);
     if (ret) {
@@ -50,7 +51,6 @@ int loadParamList(char *fn, nameValuePair_t list[], int alen) {
     char tmpStr[100];
     bzero(tmpStr, 100);
     buf = malloc(1000);
-    //bzero(buf, 1000 - 1);
     memset(buf, 0, 1000);
 
     dumpJSonTree(node, buf, tmpStr);
@@ -87,7 +87,7 @@ int loadParamList(char *fn, nameValuePair_t list[], int alen) {
     return 0;
 }
 
-int loadJSonFile(char* fn, json_t **root) {
+int loadJSonFile(const char* fn, json_t **root) {
     int err;
 
     printf("%s\n", "====== get into loadJSonFile =======\n");
