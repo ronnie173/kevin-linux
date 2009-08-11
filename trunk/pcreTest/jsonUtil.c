@@ -21,7 +21,7 @@
 /*
 int main (void) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
-    
+
     loadParamList("./param_list.json", paramList, MAX_PAIR_ARRAY_LEN);
     dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
 
@@ -36,19 +36,17 @@ int loadParamList(const char *fn, nameValuePair_t list[], int alen) {
         return 1;
     }
 
-    char *buf = NULL;
-    //char *buf = malloc(1000);
-    //bzero(buf, 1000);
-    printf("Printing the document tree...\n");
-    json_tree_to_string(root, &buf);
-    printf("%s\n", buf);
-    free(buf);
+    //char *buf = NULL;
+    //printf("Printing the document tree...\n");
+    //json_tree_to_string(root, &buf);
+    //printf("%s\n", buf);
+    //free(buf);
 
-    printf("root type is %d and text is [%s]\n", root->type, root->text);
-    json_render_tree(root);
+    //printf("root type is %d and text is [%s]\n", root->type, root->text);
+    //json_render_tree(root);
 
     json_t *node = root;
-    char tmpStr[100];
+    /*char tmpStr[100];
     bzero(tmpStr, 100);
     buf = malloc(1000);
     memset(buf, 0, 1000);
@@ -56,8 +54,8 @@ int loadParamList(const char *fn, nameValuePair_t list[], int alen) {
     dumpJSonTree(node, buf, tmpStr);
     printf("TREE:\n%s\n", buf);
 
-    free(buf);
-    
+    free(buf);*/
+
     /* try to parse param_list.json */
     /* check ParamList tag */
     node = node->child;
@@ -68,16 +66,16 @@ int loadParamList(const char *fn, nameValuePair_t list[], int alen) {
         /* try to get name/value pairs */
         json_t *valNode = NULL;
         int count = 0;
-        for (node = node->child->child; 
-                NULL != node && count < alen; 
+        for (node = node->child->child;
+                NULL != node && count < alen;
                 node = node->next) {
             /* get name */
             printf("node type is %d and text is [%s]\n", node->type, node->text);
-            strncpy(list[count].name, node->text, MAX_NAME_LEN); 
+            strncpy(list[count].name, node->text, MAX_NAME_LEN);
             /* get name */
             valNode = node->child;
             printf("node type is %d and text is [%s]\n", valNode->type, valNode->text);
-            strncpy(list[count].value, valNode->text, MAX_VALUE_LEN); 
+            strncpy(list[count].value, valNode->text, MAX_VALUE_LEN);
             count++;
         }
     }
@@ -159,6 +157,6 @@ int dumpParamList(nameValuePair_t list[], int len) {
     for (i = 0; i < len; i++) {
         printf("name is [%s] and value is [%s]\n", list[i].name, list[i].value);
     }
-    
+
     return 0;
 }
