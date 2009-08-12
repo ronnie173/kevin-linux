@@ -11,6 +11,7 @@ int paramTest(const char *fn);
 int doMatch(pcre* re, nameValuePair_t paramList[], int alen);
 int doPCRE(pcre* re, char *data);
 int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen);
+int mycallout(pcre_callout_block *block);
 
 int main(int argc, char *argv[]) {
     basicTest();
@@ -83,7 +84,7 @@ int paramTest(const char *fn) {
     const char *error;
     int err_offset;
 
-    char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b";
+    char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b(?C)";
     re = pcre_compile(regex, 0, &error, &err_offset, NULL);
 
     if (!re) {
@@ -130,6 +131,7 @@ int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen) {
     bzero(ovector, oc);
 
     int rc;
+    pcre_callout = mycallout;
 
     rc = pcre_exec(re, NULL, buf, strlen(buf), 0, 0, ovector, oc);
 
@@ -189,6 +191,23 @@ int doPCRE(pcre* re, char *data) {
     int str_length = ovector[1] - ovector[0];
 
     printf("Found string: %.*s\n", str_length, str_start);
+
+    return 0;
+}
+
+int mycallout(pcre_callout_block *block) {
+    printf("get into call out\n");
+    printf("subject is %s\n", block->subject);
+    printf("start_match is %d\n", block->start_match);
+    printf("current_position is %d\n", block->current_position);
+    printf("capture_top is %d\n", block->capture_top);
+
+    printf("start at %d and end at %d\n",
+            (block->offset_vector)[0], (block->offset_vector)[1]);
+    printf("start at %d and end at %d\n",
+            (block->offset_vector)[2], (block->offset_vector)[3]);
+    printf("start at %d and end at %d\n",
+            (block->offset_vector)[4], (block->offset_vector)[5]);
 
     return 0;
 }
