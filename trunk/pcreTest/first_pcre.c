@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <pcre.h>
+#include <time.h>
 
 #include "jsonUtil.h"
 
 #define OVEC_COUNT 30 /* should be a multiple of 3 */
+#define ZLOOP 1
 
 int basicTest();
 int paramTest(const char *fn);
@@ -93,8 +95,21 @@ int paramTest(const char *fn) {
         return 1;
     }
 
-    //doMatch(re, paramList, MAX_PAIR_ARRAY_LEN);
-    doMatchBatch(re, paramList, MAX_PAIR_ARRAY_LEN);
+    clock_t start = clock();
+    int i;
+    for (i = 0; i < ZLOOP; i++) {
+        doMatch(re, paramList, MAX_PAIR_ARRAY_LEN);
+    }
+    clock_t end = clock();
+    printf("doMatch spends %.f clocks\n", (double)end - start);
+
+    start = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doMatchBatch(re, paramList, MAX_PAIR_ARRAY_LEN);
+    }
+    end = clock();
+    printf("doMatchBatch spends %.f clocks\n", (double)end - start);
+
     pcre_free(re);
 
     return 0;
@@ -109,7 +124,7 @@ int doMatch(pcre* re, nameValuePair_t paramList[], int alen) {
         ret = doPCRE(re, paramList[i].name, 0, &start, &end);
         if (!ret) printSubStr(paramList[i].name, start, end);
         
-        doPCRE(re, paramList[i].value, 0, &start, &end);
+        ret = doPCRE(re, paramList[i].value, 0, &start, &end);
         if (!ret) printSubStr(paramList[i].value, start, end);
     }
 
@@ -123,14 +138,20 @@ int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen) {
     int i, ret, start, end, curPos;
     //nameValuePair_t tmpParam;
 
+    char *pos = buf;
     for (i = 0; i < alen; i++) {
-        strcat(buf, paramList[i].name);
+        /*strcat(buf, paramList[i].name);
         strcat(buf, "\r\n");
         strcat(buf, paramList[i].value);
-        strcat(buf, "\r\n");
+        strcat(buf, "\r\n");*/
+        sprintf(pos, "%s\n%s\n", paramList[i].name, paramList[i].value);
+        //pos += strlen(buf) -1;
+        pos += strlen(paramList[i].name) + strlen(paramList[i].value) + 2;
+        //printf("buf len=%d\n", strlen(buf));
+        //printf("the buf is\n%s\n", buf);
     }
 
-    printf("the buf is\n%s\n", buf);
+    //printf("the buf is\n%s\n", buf);
     
     curPos = 0;
     ret = doPCRE(re, buf, curPos, &start, &end);
@@ -144,9 +165,9 @@ int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen) {
 }
 
 int doPCRE(pcre* re, char *data, int offset, int *start, int *end) {
-    printf("check\n%s\n", data);
-    printf("data len is %d\n", strlen(data));
-    printf("offset is %d\n", offset);
+    //printf("check\n%s\n", data);
+    //printf("data len is %d\n", strlen(data));
+    //printf("offset is %d\n", offset);
     
     *start = -1;
     *end = -1;
@@ -159,11 +180,11 @@ int doPCRE(pcre* re, char *data, int offset, int *start, int *end) {
     if (rc < 0) {
         switch (rc) {
         case PCRE_ERROR_NOMATCH :
-            printf("No match found in text\n");
+            //printf("No match found in text\n");
             break;
 
         default :
-            printf("Match eror %d\n", rc);
+            //printf("Match eror %d\n", rc);
             break;
 
         }
@@ -200,7 +221,7 @@ int printSubStr(const char *data, int start, int end) {
         const char *str_start = data + start;
         int str_length = end - start;
 
-        printf("Found string: %.*s\n", str_length, str_start);
+        //printf("Found string: %.*s\n", str_length, str_start);
     }
 
     return 0;

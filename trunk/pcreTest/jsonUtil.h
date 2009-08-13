@@ -9,7 +9,7 @@ extern "C" {
 
 #define MAX_NAME_LEN 100
 #define MAX_VALUE_LEN 100
-#define MAX_PAIR_ARRAY_LEN 3
+#define MAX_PAIR_ARRAY_LEN 30
 
 typedef struct nameValuePair {
     char name[MAX_NAME_LEN];
