@@ -9,9 +9,10 @@
 int basicTest();
 int paramTest(const char *fn);
 int doMatch(pcre* re, nameValuePair_t paramList[], int alen);
-int doPCRE(pcre* re, char *data);
+int doPCRE(pcre* re, char *data, int offset, int *start, int *end);
 int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen);
 int mycallout(pcre_callout_block *block);
+int printSubStr(const char *data, int start, int end);
 
 int main(int argc, char *argv[]) {
     basicTest();
@@ -84,8 +85,8 @@ int paramTest(const char *fn) {
     const char *error;
     int err_offset;
 
-    char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b(?C)";
-    re = pcre_compile(regex, 0, &error, &err_offset, NULL);
+    char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b";
+    re = pcre_compile(regex, PCRE_MULTILINE, &error, &err_offset, NULL);
 
     if (!re) {
         printf("PCRE compilation failed at offset %d: %s\n", err_offset, error);
@@ -100,12 +101,16 @@ int paramTest(const char *fn) {
 }
 
 int doMatch(pcre* re, nameValuePair_t paramList[], int alen) {
-    int i;
+    int i, ret;
     //nameValuePair_t tmpParam;
 
     for (i = 0; i < alen; i++) {
-        doPCRE(re, paramList[i].name);
-        doPCRE(re, paramList[i].value);
+        int start, end;
+        ret = doPCRE(re, paramList[i].name, 0, &start, &end);
+        if (!ret) printSubStr(paramList[i].name, start, end);
+        
+        doPCRE(re, paramList[i].value, 0, &start, &end);
+        if (!ret) printSubStr(paramList[i].value, start, end);
     }
 
     return 0;
@@ -115,7 +120,7 @@ int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen) {
     char buf[10000];
     bzero(buf, 10000);
 
-    int i;
+    int i, ret, start, end, curPos;
     //nameValuePair_t tmpParam;
 
     for (i = 0; i < alen; i++) {
@@ -125,51 +130,31 @@ int doMatchBatch(pcre* re, nameValuePair_t paramList[], int alen) {
         strcat(buf, "\r\n");
     }
 
-    printf("check\n %s\n", buf);
-    int oc = 3 * alen;
-    int *ovector = malloc(oc);
-    bzero(ovector, oc);
-
-    int rc;
-    pcre_callout = mycallout;
-
-    rc = pcre_exec(re, NULL, buf, strlen(buf), 0, 0, ovector, oc);
-
-    if (rc < 0) {
-        switch (rc) {
-        case PCRE_ERROR_NOMATCH :
-            printf("No match found in text\n");
-            break;
-
-        default :
-            printf("Match eror %d\n", rc);
-            break;
-
-        }
-        free(ovector);
-        return 1;
+    printf("the buf is\n%s\n", buf);
+    
+    curPos = 0;
+    ret = doPCRE(re, buf, curPos, &start, &end);
+    while (!ret) {
+        printf("start is %d and end is %d\n", start, end);
+        printSubStr(buf, start, end);
+        ret = doPCRE(re, buf,  curPos + end + 1, &start, &end);
     }
-
-    for (i = 0; i < rc; i++) {
-        /* ovector[0] .. ovector[1] are the entire matched string */
-        char *str_start = buf + ovector[i];
-        int str_length = ovector[i + 1] - ovector[i];
-
-        printf("Found string: %.*s\n", str_length, str_start);
-    }
-
-    free(ovector);
-
+    
     return 0;
 }
 
-int doPCRE(pcre* re, char *data) {
-    printf("check %s\n", data);
-
+int doPCRE(pcre* re, char *data, int offset, int *start, int *end) {
+    printf("check\n%s\n", data);
+    printf("data len is %d\n", strlen(data));
+    printf("offset is %d\n", offset);
+    
+    *start = -1;
+    *end = -1;
+    
     int ovector[3];
     int rc;
 
-    rc = pcre_exec(re, NULL, data, strlen(data), 0, 0, ovector, 3);
+    rc = pcre_exec(re, NULL, data, strlen(data), offset, 0, ovector, 3);
 
     if (rc < 0) {
         switch (rc) {
@@ -187,11 +172,9 @@ int doPCRE(pcre* re, char *data) {
     }
 
     /* ovector[0] .. ovector[1] are the entire matched string */
-    char *str_start = data + ovector[0];
-    int str_length = ovector[1] - ovector[0];
-
-    printf("Found string: %.*s\n", str_length, str_start);
-
+    *start = ovector[0];
+    *end = ovector[1];
+    
     return 0;
 }
 
@@ -208,6 +191,17 @@ int mycallout(pcre_callout_block *block) {
             (block->offset_vector)[2], (block->offset_vector)[3]);
     printf("start at %d and end at %d\n",
             (block->offset_vector)[4], (block->offset_vector)[5]);
+
+    return 0;
+}
+
+int printSubStr(const char *data, int start, int end) {
+    if (data != NULL && start != -1 && end != -1) {
+        const char *str_start = data + start;
+        int str_length = end - start;
+
+        printf("Found string: %.*s\n", str_length, str_start);
+    }
 
     return 0;
 }
