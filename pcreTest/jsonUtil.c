@@ -70,11 +70,11 @@ int loadParamList(const char *fn, nameValuePair_t list[], int alen) {
                 NULL != node && count < alen;
                 node = node->next) {
             /* get name */
-            printf("node type is %d and text is [%s]\n", node->type, node->text);
+            //printf("node type is %d and text is [%s]\n", node->type, node->text);
             strncpy(list[count].name, node->text, MAX_NAME_LEN);
             /* get name */
             valNode = node->child;
-            printf("node type is %d and text is [%s]\n", valNode->type, valNode->text);
+            //printf("node type is %d and text is [%s]\n", valNode->type, valNode->text);
             strncpy(list[count].value, valNode->text, MAX_VALUE_LEN);
             count++;
         }
