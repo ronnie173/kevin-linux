@@ -13,7 +13,9 @@ extern "C" {
 
 typedef struct nameValuePair {
     char name[MAX_NAME_LEN];
+    int nameLen;
     char value[MAX_VALUE_LEN];
+    int valueLen;
 } nameValuePair_t;
 
 int loadJSonFile(const char *fn, json_t **root);
