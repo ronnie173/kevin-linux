@@ -6,7 +6,7 @@
 #include "jsonUtil.h"
 
 #define OVEC_COUNT 30 /* should be a multiple of 3 */
-#define ZLOOP 100000
+#define ZLOOP 1000000
 #define PRINT_FLAG 0
 
 int basicTest();
@@ -19,12 +19,16 @@ int printSubStr(const char *data, int start, int end);
 int pairArrayToBuf(nameValuePair_t paramList[], int alen, char *buf);
 pcre* compileRE(const char *regex);
 int perfTest(const char *fn);
+int perfTest2(const char *fn);
+int perfTest3(const char *fn);
 int batchTest(const char *fn);
 
 int main(int argc, char *argv[]) {
     //basicTest();
     //paramTest("./param_list.json");
-    perfTest("./param_list.json");
+    //perfTest("./param_list.json");
+    //perfTest2("./param_list.json");
+    perfTest3("./param_list.json");
     //batchTest("./short.json");
 
     return 0;
@@ -92,13 +96,13 @@ int paramTest(const char *fn) {
 
     char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b";
     pcre *re = compileRE(regex);
-    
+
     if (!re) {
         return 1;
     }
 
     int i;
-    
+
     /* array match */
     clock_t start = clock();
     for (i = 0; i < ZLOOP; i++) {
@@ -106,8 +110,16 @@ int paramTest(const char *fn) {
     }
     clock_t end = clock();
     printf("doMatch spends %.f clocks\n", (double)end - start);
+
+    start = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doMatch(re, paramList, MAX_PAIR_ARRAY_LEN / 2);
+    }
+    end = clock();
+    printf("half doMatch spends %.f clocks\n", (double)end - start);
+
     pcre_free(re);
-    
+
     /* put array into buffer */
     start = clock();
     char buf[10000];
@@ -123,7 +135,7 @@ int paramTest(const char *fn) {
     printf("buf len is %d\n", len);
     printf("buf is \n%s\n", buf);
     re = compileRE(regex);
-    
+
     if (!re) {
         return 1;
     }
@@ -148,7 +160,7 @@ int doMatch(pcre* re, nameValuePair_t paramList[], int alen) {
         int start, end;
         ret = doPCRE(re, paramList[i].name, paramList[i].nameLen, 0, &start, &end);
         if (!ret) printSubStr(paramList[i].name, start, end);
-        
+
         ret = doPCRE(re, paramList[i].value, paramList[i].valueLen, 0, &start, &end);
         if (!ret) printSubStr(paramList[i].value, start, end);
     }
@@ -166,18 +178,32 @@ int doMatchBatch(pcre* re, char *buf, int len) {
         if (PRINT_FLAG) printSubStr(buf, start, end);
         ret = doPCRE(re, buf, len, curPos + end + 1, &start, &end);
     }*/
-    
+
     char *newPos = buf;
     ret = doPCRE(re, newPos, len, 0, &start, &end);
-    while (!ret) {
-        //if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
-        //if (PRINT_FLAG) printSubStr(newPos, start, end);
+    //while (!ret) {
+    if (!ret) {
+        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+        if (PRINT_FLAG) printSubStr(newPos, start, end);
         newPos += end + 1;
         //len = strlen(newPos);
         len -= end + 1;
         //if (PRINT_FLAG) printf("new buf len is %d\n", len);
         //if (PRINT_FLAG) printf("new buf is\n%s\n", newPos);
         ret = doPCRE(re, newPos, len, 0, &start, &end);
+    }
+
+    if (!ret) {
+        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+        if (PRINT_FLAG) printSubStr(newPos, start, end);
+        newPos += end + 1;
+        len -= end + 1;
+        ret = doPCRE(re, newPos, len, 0, &start, &end);
+    }
+
+    if (!ret) {
+        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+        if (PRINT_FLAG) printSubStr(newPos, start, end);
     }
 
     return 0;
@@ -187,11 +213,11 @@ int doPCRE(pcre* re, char *data, int len, int offset, int *start, int *end) {
     //printf("check\n%s\n", data);
     //printf("data len is %d\n", len);
     //printf("offset is %d\n", offset);
-    
+
     *start = -1;
     *end = -1;
-    
-    int ovector[3] = { 0, 0, 0};
+
+    int ovector[3] = { 0, 0, 0 };
     int rc;
 
     rc = pcre_exec(re, NULL, data, len, offset, 0, ovector, 3);
@@ -214,7 +240,7 @@ int doPCRE(pcre* re, char *data, int len, int offset, int *start, int *end) {
     /* ovector[0] .. ovector[1] are the entire matched string */
     *start = ovector[0];
     *end = ovector[1];
-    
+
     return 0;
 }
 
@@ -268,9 +294,10 @@ int pairArrayToBuf(nameValuePair_t paramList[], int alen, char *buf) {
 pcre* compileRE(const char *regex) {
     const char *error;
     int err_offset;
-    
-    pcre *re = pcre_compile(regex, PCRE_MULTILINE, &error, &err_offset, NULL);
-    
+
+    //pcre *re = pcre_compile(regex, PCRE_MULTILINE, &error, &err_offset, NULL);
+    pcre *re = pcre_compile(regex, 0, &error, &err_offset, NULL);
+
     if (!re) {
         printf("PCRE compilation failed at offset %d: %s\n", err_offset, error);
     }
@@ -288,7 +315,7 @@ int perfTest(const char *fn) {
 
     /* full length test */
     pcre *re = compileRE(regex);
-    
+
     if (!re) {
         return 1;
     }
@@ -309,7 +336,7 @@ int perfTest(const char *fn) {
     clock_t end = clock();
     printf("full length spends %.f clocks\n", (double)end - start);
     pcre_free(re);
-    
+
     /* half length test */
     re = compileRE(regex);
     if (!re) {
@@ -354,6 +381,141 @@ int perfTest(const char *fn) {
     return 0;
 }
 
+int perfTest2(const char *fn) {
+    nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
+
+    loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
+    //dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
+
+    char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b";
+
+    /* full length test */
+    pcre *re = compileRE(regex);
+
+    if (!re) {
+        return 1;
+    }
+
+    int i, len, start, end;
+    char buf[10000];
+    bzero(buf, 10000);
+    pairArrayToBuf(paramList, MAX_PAIR_ARRAY_LEN, buf);
+
+    len = strlen(buf);
+    printf("buf len is %d\n", len);
+    printf("buf is \n%s\n", buf);
+
+    clock_t startTime = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doPCRE(re, buf, len, 0, &start, &end);
+        if (PRINT_FLAG) printSubStr(buf, start, end);
+    }
+    clock_t endTime = clock();
+    printf("full length spends %.f clocks\n", (double)endTime - startTime);
+    pcre_free(re);
+
+    /* half length test */
+    re = compileRE(regex);
+    if (!re) {
+        return 1;
+    }
+
+    bzero(buf, 10000);
+    pairArrayToBuf(paramList, MAX_PAIR_ARRAY_LEN / 2, buf);
+    len = strlen(buf);
+    printf("buf len is %d\n", len);
+    printf("buf is \n%s\n", buf);
+
+    startTime = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doPCRE(re, buf, len, 0, &start, &end);
+        if (PRINT_FLAG) printSubStr(buf, start, end);
+    }
+    endTime = clock();
+    printf("half spends %.f clocks\n", (double)endTime - startTime);
+    pcre_free(re);
+
+    /* short length test */
+    re = compileRE(regex);
+    if (!re) {
+        return 1;
+    }
+
+    bzero(buf, 10000);
+    pairArrayToBuf(paramList, 5, buf);
+    len = strlen(buf);
+    printf("buf len is %d\n", len);
+    printf("buf len is %d\n", strlen(buf));
+    printf("buf is \n%s\n", buf);
+
+    startTime = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doPCRE(re, buf, len, 0, &start, &end);
+        if (PRINT_FLAG) printSubStr(buf, start, end);
+    }
+    endTime = clock();
+    printf("short spends %.f clocks\n", (double)endTime - startTime);
+    pcre_free(re);
+
+    return 0;
+}
+
+int perfTest3(const char *fn) {
+    nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
+
+    loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
+    //dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
+
+    char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b";
+
+    /* full length test */
+    pcre *re = compileRE(regex);
+
+    if (!re) {
+        return 1;
+    }
+
+    int i;
+
+    clock_t startTime = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doMatch(re, paramList, MAX_PAIR_ARRAY_LEN);
+    }
+    clock_t endTime = clock();
+    printf("full length spends %.f clocks\n", (double)endTime - startTime);
+    pcre_free(re);
+
+    /* half length test */
+    re = compileRE(regex);
+    if (!re) {
+        return 1;
+    }
+
+    startTime = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doMatch(re, paramList, MAX_PAIR_ARRAY_LEN / 2);
+    }
+    endTime = clock();
+    printf("half spends %.f clocks\n", (double)endTime - startTime);
+    pcre_free(re);
+
+    /* short length test */
+    re = compileRE(regex);
+    if (!re) {
+        return 1;
+    }
+
+    startTime = clock();
+    for (i = 0; i < ZLOOP; i++) {
+        doMatch(re, paramList, MAX_PAIR_ARRAY_LEN / 5);
+    }
+    endTime = clock();
+    printf("short spends %.f clocks\n", (double)endTime - startTime);
+    pcre_free(re);
+
+    return 0;
+}
+
 int batchTest(const char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
@@ -364,7 +526,7 @@ int batchTest(const char *fn) {
 
     /* full length test */
     pcre *re = compileRE(regex);
-    
+
     if (!re) {
         return 1;
     }
