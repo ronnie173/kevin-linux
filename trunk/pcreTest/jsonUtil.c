@@ -72,10 +72,12 @@ int loadParamList(const char *fn, nameValuePair_t list[], int alen) {
             /* get name */
             //printf("node type is %d and text is [%s]\n", node->type, node->text);
             strncpy(list[count].name, node->text, MAX_NAME_LEN);
-            /* get name */
+            list[count].nameLen = strlen(node->text);
+            /* get value */
             valNode = node->child;
             //printf("node type is %d and text is [%s]\n", valNode->type, valNode->text);
             strncpy(list[count].value, valNode->text, MAX_VALUE_LEN);
+            list[count].valueLen = strlen(valNode->text);
             count++;
         }
     }
@@ -155,7 +157,8 @@ int dumpJSonTree(json_t *root, char *buf, char *tmpStr) {
 int dumpParamList(nameValuePair_t list[], int len) {
     int i;
     for (i = 0; i < len; i++) {
-        printf("name is [%s] and value is [%s]\n", list[i].name, list[i].value);
+        printf("name is [%s] (%d) and value is [%s] (%d)\n", list[i].name, 
+                list[i].nameLen, list[i].value, list[i].valueLen);
     }
 
     return 0;
