@@ -30,11 +30,11 @@ int timeDiff(struct timeval *result, struct timeval *start, struct timeval *end)
 int main(int argc, char *argv[]) {
     //basicTest();
     //paramTest("./param_list.json");
-    //perfTest("./param_list.json");
+    perfTest("./param_list.json");
     //perfTest2("./param_list.json");
     //perfTest3("./param_list.json");
     //batchTest("./short.json");
-    batchTest("./param_list.json");
+    //batchTest("./param_list.json");
 
     return 0;
 }
@@ -61,11 +61,7 @@ int basicTest() {
         printf("PCRE study failed\n");
     }
 
-    if (pe) {
-        rc = pcre_exec(re, pe, data, strlen(data), 0, 0, ovector, OVEC_COUNT);
-    } else {
-        rc = pcre_exec(re, NULL, data, strlen(data), 0, 0, ovector, OVEC_COUNT);
-    }
+    rc = pcre_exec(re, pe, data, strlen(data), 0, 0, ovector, OVEC_COUNT);
 
     if (rc < 0) {
         switch (rc) {
@@ -241,11 +237,7 @@ int doPCRE(pcre *re, pcre_extra *pe, char *data, int len, int offset, int *start
     int ovector[3] = { 0, 0, 0 };
     int rc;
 
-    if (pe) {
-        rc = pcre_exec(re, pe, data, len, offset, 0, ovector, 3);
-    } else {
-        rc = pcre_exec(re, NULL, data, len, offset, 0, ovector, 3);
-    }
+    rc = pcre_exec(re, pe, data, len, offset, 0, ovector, 3);
 
     if (rc < 0) {
         switch (rc) {
