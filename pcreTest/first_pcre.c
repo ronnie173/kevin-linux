@@ -3,14 +3,14 @@
 #include <pcre.h>
 #include <time.h>
 
-#include "jsonUtil.h"
+#include "json-cUtil.h"
 
 #define OVEC_COUNT 30 /* should be a multiple of 3 */
-#define ZLOOP 1000000
-#define PRINT_FLAG 0
+#define ZLOOP 1
+#define PRINT_FLAG 1
 
 int basicTest();
-int paramTest(const char *fn);
+int paramTest(char *fn);
 int doMatch(pcre* re, nameValuePair_t paramList[], int alen);
 int doPCRE(pcre* re, char *data, int len, int offset, int *start, int *end);
 int doMatchBatch(pcre* re, char *buf, int len);
@@ -18,18 +18,19 @@ int mycallout(pcre_callout_block *block);
 int printSubStr(const char *data, int start, int end);
 int pairArrayToBuf(nameValuePair_t paramList[], int alen, char *buf);
 pcre* compileRE(const char *regex);
-int perfTest(const char *fn);
-int perfTest2(const char *fn);
-int perfTest3(const char *fn);
-int batchTest(const char *fn);
+int perfTest(char *fn); /* test doMatchBatch */
+int perfTest2(char *fn); /* test doPCRE */
+int perfTest3(char *fn); /* test doMatch */
+int batchTest(char *fn); /* test doMatchBatch funtion only */
 
 int main(int argc, char *argv[]) {
     //basicTest();
     //paramTest("./param_list.json");
     //perfTest("./param_list.json");
     //perfTest2("./param_list.json");
-    perfTest3("./param_list.json");
+    //perfTest3("./param_list.json");
     //batchTest("./short.json");
+    batchTest("./param_list.json");
 
     return 0;
 }
@@ -88,7 +89,7 @@ int basicTest() {
     return 0;
 }
 
-int paramTest(const char *fn) {
+int paramTest(char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
     loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
@@ -181,8 +182,8 @@ int doMatchBatch(pcre* re, char *buf, int len) {
 
     char *newPos = buf;
     ret = doPCRE(re, newPos, len, 0, &start, &end);
-    //while (!ret) {
-    if (!ret) {
+    while (!ret) {
+    //if (!ret) {
         if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
         if (PRINT_FLAG) printSubStr(newPos, start, end);
         newPos += end + 1;
@@ -193,7 +194,7 @@ int doMatchBatch(pcre* re, char *buf, int len) {
         ret = doPCRE(re, newPos, len, 0, &start, &end);
     }
 
-    if (!ret) {
+    /*if (!ret) {
         if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
         if (PRINT_FLAG) printSubStr(newPos, start, end);
         newPos += end + 1;
@@ -204,7 +205,7 @@ int doMatchBatch(pcre* re, char *buf, int len) {
     if (!ret) {
         if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
         if (PRINT_FLAG) printSubStr(newPos, start, end);
-    }
+    }*/
 
     return 0;
 }
@@ -305,7 +306,7 @@ pcre* compileRE(const char *regex) {
     return re;
 }
 
-int perfTest(const char *fn) {
+int perfTest(char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
     loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
@@ -381,7 +382,7 @@ int perfTest(const char *fn) {
     return 0;
 }
 
-int perfTest2(const char *fn) {
+int perfTest2(char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
     loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
@@ -460,7 +461,7 @@ int perfTest2(const char *fn) {
     return 0;
 }
 
-int perfTest3(const char *fn) {
+int perfTest3(char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
     loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
@@ -516,11 +517,11 @@ int perfTest3(const char *fn) {
     return 0;
 }
 
-int batchTest(const char *fn) {
+int batchTest(char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
     loadParamList(fn, paramList, MAX_PAIR_ARRAY_LEN);
-    //dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
+    dumpParamList(paramList, MAX_PAIR_ARRAY_LEN);
 
     char *regex = "\\b[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\\.[a-zA-Z]{2,4}\\b";
 
