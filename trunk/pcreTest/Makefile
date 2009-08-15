@@ -4,7 +4,7 @@ LIB_OBJS =
 
 CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~ *.stackdump
 
-PROGS =	first_pcre json_util_test
+PROGS =	first_pcre json_util_test json-c_util_test
 
 all:	${PROGS}
 
@@ -17,17 +17,26 @@ json_helper.o:	json_helper.c json_helper.h
 jsonUtil.o:	jsonUtil.c jsonUtil.h json.c json.h
 	${CC} ${CFLAGS} -c $<
 
+json-cUtil.o:	json-cUtil.c json-cUtil.h
+	${CC} ${CFLAGS} -I/usr/local/include/json -c $<
+
 jsonUtilTest.o:	jsonUtilTest.c
 	${CC} ${CFLAGS} -c $<
 
 json_util_test:	jsonUtilTest.o jsonUtil.o json.o json_helper.o
 	${CC} ${CFLAGS} $^ -o $@
 
-first_pcre.o:	first_pcre.c jsonUtil.h
-	${CC} ${CFLAGS} -c $<
+json-cUtilTest.o:	json-cUtilTest.c
+	${CC} ${CFLAGS} -I/usr/local/include/json -c $<
 
-first_pcre:	first_pcre.o jsonUtil.o json.o json_helper.o
-	${CC} ${CFLAGS} $^ -o $@ -lpcre
+json-c_util_test:	json-cUtilTest.o json-cUtil.o
+	${CC} ${CFLAGS} -L/usr/local/lib $^ -o $@ -ljson
+
+first_pcre.o:	first_pcre.c json-cUtil.h
+	${CC} ${CFLAGS} -I/usr/local/include/json -c $<
+
+first_pcre:	first_pcre.o json-cUtil.o
+	${CC} ${CFLAGS} -L/usr/local/lib $^ -o $@ -lpcre -ljson
     
 myzip:
 	tar cvzf pcreTest.tgz Makefile README *.c *.h
