@@ -21,6 +21,8 @@ typedef struct nameValuePair {
 int loadParamList(char *fn, nameValuePair_t list[], int alen);
 int dumpJsonObj(struct json_object *root);
 int dumpParamList(nameValuePair_t list[], int len);
+int getFileLen(const char* fn);
+int loadFile(const char* fn, char *buf, int fileLen);
 
 #ifdef __cplusplus
 }
