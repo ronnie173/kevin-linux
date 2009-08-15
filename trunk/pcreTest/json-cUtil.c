@@ -61,7 +61,7 @@ int loadParamList(char *fn, nameValuePair_t list[], int alen) {
                     list[count].nameLen = strlen(list[count].name);
                     /* get value */
                     //printf("value is [%s]\n", json_object_to_json_string(val));
-                    strncpy(list[count].value, json_object_to_json_string(val), MAX_VALUE_LEN);
+                    strncpy(list[count].value, json_object_get_string(val), MAX_VALUE_LEN);
                     list[count].valueLen = strlen(list[count].value);
                     count++;
                 }
@@ -105,6 +105,39 @@ int dumpParamList(nameValuePair_t list[], int len) {
         printf("name is [%s] (%d) and value is [%s] (%d)\n", list[i].name,
                 list[i].nameLen, list[i].value, list[i].valueLen);
     }
+
+    return 0;
+}
+
+int getFileLen(const char* fn) {
+    int ret = -1;
+
+    struct stat buf;
+
+    if (!stat(fn, &buf)) {
+        ret = (int)buf.st_size;
+    }
+
+    return ret;
+}
+
+int loadFile(const char* fn, char *buf, int fileLen) {
+    int fd = open(fn, O_RDONLY);
+    if (-1 == fd) {
+        printf("open file failed\n");
+        return 1;
+    }
+
+
+    size_t count = read(fd, buf, fileLen);
+    if (count != fileLen) {
+        printf("failed to read file\n");
+        close(fd);
+
+        return 1;
+    }
+
+    close(fd);
 
     return 0;
 }

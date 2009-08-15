@@ -2,18 +2,21 @@
 #include <string.h>
 #include <pcre.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "json-cUtil.h"
 
 #define OVEC_COUNT 30 /* should be a multiple of 3 */
-#define ZLOOP 1
-#define PRINT_FLAG 1
+#define ZLOOP 500000
+#define PRINT_FLAG 0
+#define DO_MORE 0
 
 int basicTest();
 int paramTest(char *fn);
 int doMatch(pcre* re, nameValuePair_t paramList[], int alen);
 int doPCRE(pcre* re, char *data, int len, int offset, int *start, int *end);
 int doMatchBatch(pcre* re, char *buf, int len);
+int doMatchBatchOffset(pcre* re, char *buf, int len);
 int mycallout(pcre_callout_block *block);
 int printSubStr(const char *data, int start, int end);
 int pairArrayToBuf(nameValuePair_t paramList[], int alen, char *buf);
@@ -22,6 +25,7 @@ int perfTest(char *fn); /* test doMatchBatch */
 int perfTest2(char *fn); /* test doPCRE */
 int perfTest3(char *fn); /* test doMatch */
 int batchTest(char *fn); /* test doMatchBatch funtion only */
+int timeDiff(struct timeval *result, struct timeval *start, struct timeval *end);
 
 int main(int argc, char *argv[]) {
     //basicTest();
@@ -170,42 +174,53 @@ int doMatch(pcre* re, nameValuePair_t paramList[], int alen) {
 }
 
 int doMatchBatch(pcre* re, char *buf, int len) {
-    int ret, start, end, curPos;
-
-    /*curPos = 0;
-    ret = doPCRE(re, buf, len, curPos, &start, &end);
-    while (!ret) {
-        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
-        if (PRINT_FLAG) printSubStr(buf, start, end);
-        ret = doPCRE(re, buf, len, curPos + end + 1, &start, &end);
-    }*/
+    int ret, start, end;
 
     char *newPos = buf;
     ret = doPCRE(re, newPos, len, 0, &start, &end);
-    while (!ret) {
-    //if (!ret) {
-        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
-        if (PRINT_FLAG) printSubStr(newPos, start, end);
-        newPos += end + 1;
-        //len = strlen(newPos);
-        len -= end + 1;
-        //if (PRINT_FLAG) printf("new buf len is %d\n", len);
-        //if (PRINT_FLAG) printf("new buf is\n%s\n", newPos);
-        ret = doPCRE(re, newPos, len, 0, &start, &end);
+
+    if (DO_MORE) {
+        while (!ret) {
+        //if (!ret) {
+            if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+            if (PRINT_FLAG) printSubStr(newPos, start, end);
+            newPos += end + 1;
+            //len = strlen(newPos);
+            len -= end + 1;
+            //if (PRINT_FLAG) printf("new buf len is %d\n", len);
+            //if (PRINT_FLAG) printf("new buf is\n%s\n", newPos);
+            ret = doPCRE(re, newPos, len, 0, &start, &end);
+        }
+
+        /*if (!ret) {
+            if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+            if (PRINT_FLAG) printSubStr(newPos, start, end);
+            newPos += end + 1;
+            len -= end + 1;
+            ret = doPCRE(re, newPos, len, 0, &start, &end);
+        }
+
+        if (!ret) {
+            if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+            if (PRINT_FLAG) printSubStr(newPos, start, end);
+        }*/
     }
 
-    /*if (!ret) {
-        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
-        if (PRINT_FLAG) printSubStr(newPos, start, end);
-        newPos += end + 1;
-        len -= end + 1;
-        ret = doPCRE(re, newPos, len, 0, &start, &end);
-    }
+    return 0;
+}
 
-    if (!ret) {
-        if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
-        if (PRINT_FLAG) printSubStr(newPos, start, end);
-    }*/
+int doMatchBatchOffset(pcre* re, char *buf, int len) {
+    int ret, start, end, curPos;
+
+    curPos = 0;
+    ret = doPCRE(re, buf, len, curPos, &start, &end);
+    if (DO_MORE) {
+        while (!ret) {
+            if (PRINT_FLAG) printf("start is %d and end is %d\n", start, end);
+            if (PRINT_FLAG) printSubStr(buf, start, end);
+            ret = doPCRE(re, buf, len, curPos + end + 1, &start, &end);
+        }
+    }
 
     return 0;
 }
@@ -532,7 +547,34 @@ int batchTest(char *fn) {
         return 1;
     }
 
-    int len;
+    int len, i;
+    struct timeval startTime, endTime, result;
+
+    const char *dataFn = "./test.txt";
+    int fileLen = getFileLen(dataFn);
+    if (fileLen == -1) {
+        pcre_free(re);
+        return 1;
+    }
+    char *buf2 = malloc(fileLen);
+    bzero(buf2, fileLen);
+    loadFile(dataFn, buf2, fileLen);
+
+    printf("buf2 len is %d\n", fileLen);
+    printf("buf2 is \n%s\n", buf2);
+
+    gettimeofday(&startTime, NULL);
+
+    for (i = 0; i < ZLOOP; i++) {
+        //doMatchBatch(re, buf2, fileLen);
+        doMatchBatchOffset(re, buf2, fileLen);
+    }
+
+    gettimeofday(&endTime, NULL);
+    timeDiff(&result, &endTime, &startTime);
+    printf("batchTest short cost: %ld.%.6ld\n", result.tv_sec, result.tv_usec);
+    free(buf2);
+
     char buf[10000];
     bzero(buf, 10000);
     pairArrayToBuf(paramList, MAX_PAIR_ARRAY_LEN, buf);
@@ -541,9 +583,44 @@ int batchTest(char *fn) {
     printf("buf len is %d\n", len);
     printf("buf is \n%s\n", buf);
 
-    doMatchBatch(re, buf, len);
+    gettimeofday(&startTime, NULL);
+
+    for (i = 0; i < ZLOOP; i++) {
+        //doMatchBatch(re, buf, len);
+        doMatchBatchOffset(re, buf, len);
+    }
+
+    gettimeofday(&endTime, NULL);
+    timeDiff(&result, &endTime, &startTime);
+    printf("batchTest cost: %ld.%.6ld\n", result.tv_sec, result.tv_usec);
 
     pcre_free(re);
 
     return 0;
+}
+
+/* Subtract the `struct timeval' values X and Y,
+   storing the result in RESULT.
+   Return 1 if the difference is negative, otherwise 0.  */
+
+int timeDiff(struct timeval *result, struct timeval *x, struct timeval *y) {
+    /* Perform the carry for the later subtraction by updating y. */
+    if (x->tv_usec < y->tv_usec) {
+        int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+        y->tv_usec -= 1000000 * nsec;
+        y->tv_sec += nsec;
+    }
+    if (x->tv_usec - y->tv_usec > 1000000) {
+        int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+        y->tv_usec += 1000000 * nsec;
+        y->tv_sec -= nsec;
+    }
+
+    /* Compute the time remaining to wait.
+     tv_usec is certainly positive. */
+    result->tv_sec = x->tv_sec - y->tv_sec;
+    result->tv_usec = x->tv_usec - y->tv_usec;
+
+    /* Return 1 if result is negative. */
+    return x->tv_sec < y->tv_sec;
 }
