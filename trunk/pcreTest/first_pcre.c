@@ -9,7 +9,7 @@
 #define OVEC_COUNT 30 /* should be a multiple of 3 */
 #define ZLOOP 500000
 #define PRINT_FLAG 0
-#define DO_MORE 0
+#define DO_MORE 1
 
 int basicTest();
 int paramTest(char *fn);
@@ -23,7 +23,7 @@ int pairArrayToBuf(nameValuePair_t paramList[], int alen, char *buf);
 pcre* compileRE(const char *regex);
 int perfTest(char *fn); /* test doMatchBatch */
 int perfTest2(char *fn); /* test doPCRE */
-int perfTest3(char *fn); /* test doMatch */
+int perfTest3(char *fn); /* test array doMatch */
 int batchTest(char *fn); /* test doMatchBatch funtion only */
 int timeDiff(struct timeval *result, struct timeval *start, struct timeval *end);
 
@@ -32,9 +32,9 @@ int main(int argc, char *argv[]) {
     //paramTest("./param_list.json");
     //perfTest("./param_list.json");
     //perfTest2("./param_list.json");
-    //perfTest3("./param_list.json");
+    perfTest3("./param_list.json");
     //batchTest("./short.json");
-    batchTest("./param_list.json");
+    //batchTest("./param_list.json");
 
     return 0;
 }
@@ -476,6 +476,7 @@ int perfTest2(char *fn) {
     return 0;
 }
 
+/* test array match */
 int perfTest3(char *fn) {
     nameValuePair_t paramList[MAX_PAIR_ARRAY_LEN];
 
@@ -492,41 +493,37 @@ int perfTest3(char *fn) {
     }
 
     int i;
+    struct timeval startTime, endTime, result;
 
-    clock_t startTime = clock();
+    /* full array */
+    gettimeofday(&startTime, NULL);
+
     for (i = 0; i < ZLOOP; i++) {
         doMatch(re, paramList, MAX_PAIR_ARRAY_LEN);
     }
-    clock_t endTime = clock();
-    printf("full length spends %.f clocks\n", (double)endTime - startTime);
-    pcre_free(re);
 
-    /* half length test */
-    re = compileRE(regex);
-    if (!re) {
-        return 1;
-    }
+    gettimeofday(&endTime, NULL);
+    timeDiff(&result, &endTime, &startTime);
+    printf("full array cost: %ld.%.6ld\n", result.tv_sec, result.tv_usec);
 
-    startTime = clock();
+    /* half array */
+    gettimeofday(&startTime, NULL);
     for (i = 0; i < ZLOOP; i++) {
         doMatch(re, paramList, MAX_PAIR_ARRAY_LEN / 2);
     }
-    endTime = clock();
-    printf("half spends %.f clocks\n", (double)endTime - startTime);
-    pcre_free(re);
+    gettimeofday(&endTime, NULL);
+    timeDiff(&result, &endTime, &startTime);
+    printf("half array cost: %ld.%.6ld\n", result.tv_sec, result.tv_usec);
 
     /* short length test */
-    re = compileRE(regex);
-    if (!re) {
-        return 1;
-    }
-
-    startTime = clock();
+    gettimeofday(&startTime, NULL);
     for (i = 0; i < ZLOOP; i++) {
         doMatch(re, paramList, MAX_PAIR_ARRAY_LEN / 5);
     }
-    endTime = clock();
-    printf("short spends %.f clocks\n", (double)endTime - startTime);
+    gettimeofday(&endTime, NULL);
+    timeDiff(&result, &endTime, &startTime);
+    printf("short array cost: %ld.%.6ld\n", result.tv_sec, result.tv_usec);
+
     pcre_free(re);
 
     return 0;
