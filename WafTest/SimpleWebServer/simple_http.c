@@ -262,17 +262,23 @@ int main(int argc, char *argv[]) {
 
         f = fdopen(s, "r");
         ret = process_req(f);
-        fclose(f);
+        //fclose(f);
         
         f = fdopen(s, "w");
         if (ret) {
             switch (ret) {
             case -1 :
                 send_error(f, 501, "Not supported", NULL, "Method is not supported.");
+            break;
+            
             case -2 :
                 send_error(f, 404, "Not Found", NULL, "File not found.");
+            break;
+            
             case -3 :
                 send_error(f, 501, "Not supported", NULL, "DIR listing NOT supported.");
+            break;
+            
             default :
                 printf("unknown error\n");
             }
