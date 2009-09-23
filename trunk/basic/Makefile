@@ -2,9 +2,9 @@ CC = gcc
 CFLAGS = -g -Wall
 LIB_OBJS =
 
-CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~ *.stackdump
+CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~ *~ *.stackdump
 
-PROGS =	structTest sortTest strTest funcTest arrayTest byteTest
+PROGS =	structTest sortTest strTest funcTest arrayTest byteTest getOptTest
 
 all:	${PROGS}
 
@@ -25,6 +25,9 @@ arrayTest:	arrayTest.o
 
 byteTest:	byteTest.o
 	${CC} ${CFLAGS} -o $@ byteTest.o
+
+getOptTest:	getOptTest.o
+	${CC} ${CFLAGS} -o $@ getOptTest.o
 
 myzip:
 	tar cvzf basic.tgz Makefile README *.c *.h
