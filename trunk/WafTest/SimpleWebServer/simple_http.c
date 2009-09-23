@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <getopt.h>
 
 #define SERVER "webserver/1.0"
 #define PROTOCOL "HTTP/1.0"
@@ -23,7 +24,13 @@
 
 char *path;
 
-ssize_t writeline(int sockd, const void *vptr, size_t n) {
+/* Delay n seconds before send out http response body */
+int bodyDelaySec = 0;
+
+/* Whether to display verbose messages.  */
+int verbose = 0;
+
+/*ssize_t writeline(int sockd, const void *vptr, size_t n) {
     size_t      nleft;
     ssize_t     nwritten;
     const char *buffer;
@@ -44,7 +51,7 @@ ssize_t writeline(int sockd, const void *vptr, size_t n) {
     }
 
     return n;
-}
+}*/
 
 char *get_mime_type(char *name) {
     char *ext = strrchr(name, '.');
@@ -101,6 +108,9 @@ void send_headers(FILE *f, int status, char *title, char *extra,
 
 void send_error(FILE *f, int status, char *title, char *extra, char *text) {
     send_headers(f, status, title, extra, "text/html", -1, -1);
+    
+    if (bodyDelaySec > 0) sleep(bodyDelaySec);
+    
     fprintf(f, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\r\n", status, title);
     fprintf(f, "<BODY><H4>%d %s</H4>\r\n", status, title);
     fprintf(f, "%s\r\n", text);
@@ -121,6 +131,8 @@ void send_file(FILE *f, char *path, struct stat *statbuf) {
         int length = S_ISREG(statbuf->st_mode) ? statbuf->st_size : -1;
         send_headers(f, 200, "OK", NULL, get_mime_type(path), length,
                 statbuf->st_mtime);
+
+        if (bodyDelaySec > 0) sleep(bodyDelaySec);
 
         while ((n = fread(data, 1, sizeof(data), file)) > 0)
             fwrite(data, 1, n, f);
@@ -237,16 +249,92 @@ int process_res(FILE *f) {
     return 0;
 }
 
+/* 
+ * Prints usage information for this program to STREAM (typically
+ * stdout or stderr), and exit the program with EXIT_CODE.  Does not
+ * return.
+ */
+void print_usage(FILE* stream, int exit_code) {
+    fprintf(stream, "Usage:  simple_http options [ inputfile ... ]\n");
+    fprintf(stream,
+            "  -h  --help             Display this usage information.\n"
+            "  -b  --bodydelay        Delay n sec before send out body.\n"
+            "  -v  --verbose          Print verbose messages.\n");
+    exit(exit_code);
+}
+
 int main(int argc, char *argv[]) {
-    int sock, ret;
+    int next_option;
+
+    /* A string listing valid short options letters.  */
+    const char* const short_options = "hb:v";
+    /* An array describing valid long options.  */
+    const struct option long_options[] = { 
+            { "help", no_argument, NULL, 'h' }, 
+            { "bodydelay", required_argument, NULL, 'b' }, 
+            { "verbose", no_argument, NULL, 'v' }, 
+            { NULL, 0, NULL, 0 } /* Required at end of array.  */
+    };
+
+    do {
+        next_option = getopt_long(argc, argv, short_options, long_options, NULL);
+        switch (next_option) {
+        case 'h': /* -h or --help */
+            /* User has requested usage information.  Print it to standard
+             output, and exit with exit code zero (normal termination).  */
+            print_usage(stdout, 0);
+
+        case 'b': /* -b or --bodydelay */
+            /* This option takes an argument, the name of the output file.  */
+            bodyDelaySec = atoi(optarg);
+            break;
+
+        case 'v': /* -v or --verbose */
+            verbose = 1;
+            break;
+
+        case '?': /* The user specified an invalid option.  */
+            /* Print usage information to standard error, and exit with exit
+             code one (indicating abnormal termination).  */
+            print_usage(stderr, 1);
+
+        case -1: /* Done with options.  */
+            break;
+
+        default: /* Something else: unexpected.  */
+            abort();
+        }
+    } while (next_option != -1);
+
+    if (bodyDelaySec > 0) {
+        printf("Delay %d seconds before sending out http body\n", bodyDelaySec);
+    }
+    
+    int sock, ret, optval = 1;
     struct sockaddr_in sin;
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
-
+    if (sock < 0) {
+        printf("Failed to create socket\n");
+        return -1;
+    }
+    
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, 
+            (const void *)&optval, sizeof(int)) < 0) {
+        printf("Failed to set socket option\n");
+        return -2;
+    }
+    
+    bzero((char *)&sin, sizeof(sin));
+    
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = INADDR_ANY;
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
     sin.sin_port = htons(PORT);
-    bind(sock, (struct sockaddr *) &sin, sizeof(sin));
+    
+    if (bind(sock, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
+        printf("Failed to bind\n");
+        return -3;
+    }
 
     listen(sock, 5);
     printf("HTTP server listening on port %d at %s\n", PORT, inet_ntoa(
