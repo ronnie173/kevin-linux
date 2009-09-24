@@ -20,15 +20,23 @@
 #define SERVER "webserver/1.0"
 #define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
-#define PORT 8111
-
-char *path;
+#define PORT 8123
+#define MAX_PATH 1024
 
 /* Delay n seconds before send out http response body */
 int bodyDelaySec = 0;
 
-/* Whether to display verbose messages.  */
+/* The port number web server will listen, default is 8123. */
+int port_num = PORT;
+
+/* Whether to display verbose messages. */
 int verbose = 0;
+
+/* Home dir path. default is current dir. */
+char *home_dir = ".";
+
+/* the full path of the request file. */
+char full_path[MAX_PATH];
 
 /*ssize_t writeline(int sockd, const void *vptr, size_t n) {
     size_t      nleft;
@@ -123,7 +131,7 @@ void send_file(FILE *f, char *path, struct stat *statbuf) {
     char data[4096];
     int n;
 
-    FILE *file = fopen(path, "r");
+    FILE *file = fopen(full_path, "r");
     if (!file) {
         printf("can not open the file\n");
         send_error(f, 403, "Forbidden", NULL, "Access denied.");
@@ -149,6 +157,7 @@ int process_req(FILE *f) {
     char buf[4096];
     char *method;
     char *protocol;
+    char *path;
     struct stat statbuf;
     //char pathbuf[4096];
     //int len;
@@ -170,10 +179,15 @@ int process_req(FILE *f) {
         return -1;
     }
 
+    bzero(full_path, MAX_PATH);
+    strcat(full_path, home_dir);
+    strcat(full_path, path);
+    printf("the full path is [%s]\n", full_path);
+    
     if (strcmp(method, "GET") != 0) {
         printf("method [%s] is NOT supported\n", method);
         return -1;
-    } else if (stat(path, &statbuf) < 0) {
+    } else if (stat(full_path, &statbuf) < 0) {
         printf("File %s is NOT found\n", path);
         return -2;
     } else if (S_ISDIR(statbuf.st_mode)) {
@@ -244,7 +258,7 @@ int process_req(FILE *f) {
 int process_res(FILE *f) {
     struct stat statbuf;
 
-    send_file(f, path, &statbuf);
+    send_file(f, full_path, &statbuf);
 
     return 0;
 }
@@ -259,6 +273,8 @@ void print_usage(FILE* stream, int exit_code) {
     fprintf(stream,
             "  -h  --help             Display this usage information.\n"
             "  -b  --bodydelay        Delay n sec before send out body.\n"
+            "  -p  --port             The listen port number.\n"
+            "  -d  --homedir          The home directory.\n"
             "  -v  --verbose          Print verbose messages.\n");
     exit(exit_code);
 }
@@ -267,11 +283,13 @@ int main(int argc, char *argv[]) {
     int next_option;
 
     /* A string listing valid short options letters.  */
-    const char* const short_options = "hb:v";
+    const char* const short_options = "hb:p:d:v";
     /* An array describing valid long options.  */
     const struct option long_options[] = { 
             { "help", no_argument, NULL, 'h' }, 
             { "bodydelay", required_argument, NULL, 'b' }, 
+            { "port", required_argument, NULL, 'p' }, 
+            { "homedir", required_argument, NULL, 'd' }, 
             { "verbose", no_argument, NULL, 'v' }, 
             { NULL, 0, NULL, 0 } /* Required at end of array.  */
     };
@@ -285,8 +303,15 @@ int main(int argc, char *argv[]) {
             print_usage(stdout, 0);
 
         case 'b': /* -b or --bodydelay */
-            /* This option takes an argument, the name of the output file.  */
             bodyDelaySec = atoi(optarg);
+            break;
+       
+        case 'p': /* -p or --port */
+            port_num = atoi(optarg);
+            break;
+
+        case 'd': /* -d or --homedir */
+            home_dir = strdup(optarg);
             break;
 
         case 'v': /* -v or --verbose */
@@ -310,6 +335,8 @@ int main(int argc, char *argv[]) {
         printf("Delay %d seconds before sending out http body\n", bodyDelaySec);
     }
     
+    printf("Home directory is [%s]\n", home_dir);
+    
     int sock, ret, optval = 1;
     struct sockaddr_in sin;
 
@@ -329,7 +356,7 @@ int main(int argc, char *argv[]) {
     
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    sin.sin_port = htons(PORT);
+    sin.sin_port = htons(port_num);
     
     if (bind(sock, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
         printf("Failed to bind\n");
@@ -337,7 +364,7 @@ int main(int argc, char *argv[]) {
     }
 
     listen(sock, 5);
-    printf("HTTP server listening on port %d at %s\n", PORT, inet_ntoa(
+    printf("HTTP server listening on port %d at %s\n", port_num, inet_ntoa(
             sin.sin_addr));
 
     while (1) {
