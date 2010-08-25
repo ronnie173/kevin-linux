@@ -1,11 +1,17 @@
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/sched.h>
 MODULE_LICENSE("Dual BSD/GPL");
 
 static int hello_init(void) {
 	printk(KERN_ALERT "Hello, world\n");
-	/*printk(KERN_INFO "The process is \"%s\" (pid %i)\n",
-			current->comm, current->pid);*/
+	
+	/*task_struct *cur;
+	cur = get_current();*/
+	printk(KERN_INFO "The process is [%s]\n",
+			current->comm);
+	/*printk(KERN_INFO "The pid is %d\n",
+			current->pid);*/
 	return 0;
 }
 
