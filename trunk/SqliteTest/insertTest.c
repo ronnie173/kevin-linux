@@ -70,67 +70,15 @@ static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName
     return 0;
 }
 
-int main(int argc, char **argv){
-    sqlite3 *db;
-    char *zErrMsg = 0;
+static int getTableMax() {
     int rc;
-    char *continentCountSql = "select count(id) from continent_mapping";
-    char *countryCountSql = "select count(id) from country_mapping";
-    char *stateCountSql = "select count(id) from state_mapping";
-    char *cityCountSql = "select count(id) from city_mapping";
-    char *hostCountSql = "select count(id) from host_mapping";
-    char *urlCountSql = "select count(id) from url_mapping";
-    char *attackCountSql = "select count(id) from attack_mapping";
-    char *cleanSql = "delete from main_log";
-    char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
-    		"ml.src_port, ml.dst_ip, ml.dst_port, ml.bandwidth, con.name, "
-    		"cou.name, sta.name, cit.name, host.name, url.name, att.name "
-    		"from main_log ml, continent_mapping con, country_mapping cou, "
-    		"state_mapping sta, city_mapping cit, host_mapping host, "
-    		"url_mapping url, attack_mapping att where "
-    		"ml.id = 1 and "
-    		"ml.continent_id = con.id and ml.country_id = cou.id and "
-    		"ml.state_id = sta.id and ml.city_id = cit.id and "
-    		"ml.host_id = host.id and ml.url_id = url.id and "
-    		"ml.attack_id = att.id";
-    char insertSql[512];
-    
-    sqlite3_uint64 id; /* int8 primary key asc */
-    time_t timestamp; /* datetime not null */
-    uint src_ip; /* int4 not null */
-    unsigned short int src_port; /* int2 not null */
-    uint dst_ip; /* int4 not null */
-    unsigned short int dst_port; /* int2 not null */
-    unsigned short int bandwidth; /* int2 not null */
-    
-    /* don't use foreign key for now */
-    unsigned char continent_id; /* int1 not null */
-    unsigned short int country_id; /* int2 not null */
-    uint state_id; /* int4 */
-    uint city_id; /* int4 */
-    uint host_id; /* int4 not null */
-    uint url_id; /* int4 not null */
-    unsigned short int attack_id; /* int2 not null */    
-    
-    
-    if( argc != 2 ){
-        fprintf(stderr, "Usage: %s DATABASE\n", argv[0]);
-        exit(1);
-    }
-    
-    rc = sqlite3_open(argv[1], &db);
-    if (rc) {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        exit(1);
-    }
-    
+
     printf("sql is [%s]\n", continentCountSql);
     rc = sqlite3_exec(db, continentCountSql, countCallback, "continent", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
 
     printf("sql is [%s]\n", countryCountSql);
@@ -138,7 +86,7 @@ int main(int argc, char **argv){
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
     
     printf("sql is [%s]\n", stateCountSql);
@@ -146,7 +94,7 @@ int main(int argc, char **argv){
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
     
     printf("sql is [%s]\n", cityCountSql);
@@ -154,7 +102,7 @@ int main(int argc, char **argv){
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
     
     printf("sql is [%s]\n", hostCountSql);
@@ -162,7 +110,7 @@ int main(int argc, char **argv){
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
 
     printf("sql is [%s]\n", urlCountSql);
@@ -170,7 +118,7 @@ int main(int argc, char **argv){
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
 
     printf("sql is [%s]\n", attackCountSql);
@@ -178,9 +126,53 @@ int main(int argc, char **argv){
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        goto sql_close;
+        goto sth_wrong;
     }
     
+sth_wrong: return 1;
+
+    return 0;
+}
+
+int main(int argc, char **argv){
+    int rc;
+    char insertSql[512];
+
+    sqlite3_uint64 id; /* int8 primary key asc */
+    time_t timestamp; /* datetime not null */
+    uint src_ip; /* int4 not null */
+    unsigned short int src_port; /* int2 not null */
+    uint dst_ip; /* int4 not null */
+    unsigned short int dst_port; /* int2 not null */
+    unsigned short int bandwidth; /* int2 not null */
+
+    /* don't use foreign key for now */
+    unsigned char continent_id; /* int1 not null */
+    unsigned short int country_id; /* int2 not null */
+    uint state_id; /* int4 */
+    uint city_id; /* int4 */
+    uint host_id; /* int4 not null */
+    uint url_id; /* int4 not null */
+    unsigned short int attack_id; /* int2 not null */
+
+
+    if( argc != 2 ){
+        fprintf(stderr, "Usage: %s DATABASE\n", argv[0]);
+        exit(1);
+    }
+
+    rc = sqlite3_open(argv[1], &db);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(1);
+    }
+
+    if (!getTableMax()) {
+        printf("getTableMax failed\n");
+        goto sql_close;
+    }
+
     /* clean main log table */
     printf("clean main_log table\n");
     rc = sqlite3_exec(db, cleanSql, 0, 0, &zErrMsg);

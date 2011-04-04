@@ -43,6 +43,31 @@ int attackCount = 0;
 char ipBuf[64];
 char timeBuf[128];
 
+sqlite3 *db;
+char *zErrMsg = 0;
+
+char *continentCountSql = "select count(id) from continent_mapping";
+char *countryCountSql = "select count(id) from country_mapping";
+char *stateCountSql = "select count(id) from state_mapping";
+char *cityCountSql = "select count(id) from city_mapping";
+char *hostCountSql = "select count(id) from host_mapping";
+char *urlCountSql = "select count(id) from url_mapping";
+char *attackCountSql = "select count(id) from attack_mapping";
+char *cleanSql = "delete from main_log";
+char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
+        "ml.src_port, ml.dst_ip, ml.dst_port, ml.bandwidth, con.name, "
+        "cou.name, sta.name, cit.name, host.name, url.name, att.name "
+        "from main_log ml, continent_mapping con, country_mapping cou, "
+        "state_mapping sta, city_mapping cit, host_mapping host, "
+        "url_mapping url, attack_mapping att where "
+        "ml.id = 1 and "
+        "ml.continent_id = con.id and ml.country_id = cou.id and "
+        "ml.state_id = sta.id and ml.city_id = cit.id and "
+        "ml.host_id = host.id and ml.url_id = url.id and "
+        "ml.attack_id = att.id";
+
+static int getTableMax();
+
 #ifdef __cplusplus
 }
 #endif
