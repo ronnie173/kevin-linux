@@ -33,7 +33,7 @@ create table host_mapping (
 );
 
 create table url_mapping (
-    id int4 primary key asc,
+    id integer primary key autoincrement,
     name character(256) not null
 );
 
