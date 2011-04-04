@@ -16,10 +16,11 @@ extern "C" {
 
 #define Z_LOOP 1
 //#define Z_LOOP 1 * 1000 * 100
-#define URL_INSERT_LOOP 10
+#define URL_INSERT_LOOP 1 * 1000
 //#define URL_INSERT_LOOP 1 * 1000 * 100
 #define URL_PATH_COUNT 20
 #define URL_EXT_COUNT 5
+#define IF_LOG 0
 
 char *pathStr[URL_PATH_COUNT] = {
 	"test", "hello", "kevin", "fortinet", "eclipse",
@@ -29,7 +30,7 @@ char *pathStr[URL_PATH_COUNT] = {
 };
 
 char *extStr[URL_EXT_COUNT] = {
-    ".asp", ".php", ".jsp", ".do", ".action"
+    "check.asp", "input.php", "out.jsp", "delete.do", "update.action"
 };
 
 int continentCount = 0;
@@ -39,6 +40,7 @@ int cityCount = 0;
 int hostCount = 0;
 int urlCount = 0;
 int attackCount = 0;
+unsigned int selectID = 0;
 
 char ipBuf[64];
 char timeBuf[128];
@@ -65,8 +67,16 @@ char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
         "ml.state_id = sta.id and ml.city_id = cit.id and "
         "ml.host_id = host.id and ml.url_id = url.id and "
         "ml.attack_id = att.id";
+char *selectIDSql = "select id from %s where %s = '%s'";
+char *insertSql = "insert into %s values(NULL, '%s')";
+char *cleanUrlSql = "delete from url_mapping";
 
 static int getTableMax();
+static int testMainLog();
+static int testUrlInsert();
+static int convertInt2IP(unsigned int ipAddress, char *buf);
+static int countCallback(void *table, int argc, char **argv, char **azColName);
+static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName);
 
 #ifdef __cplusplus
 }
