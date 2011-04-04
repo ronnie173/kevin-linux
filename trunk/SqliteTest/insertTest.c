@@ -1,23 +1,4 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-#include <sqlite3.h>
-
-#define Z_LOOP 1 * 1000 * 100
-
-int continentCount = 0;
-int countryCount = 0;
-int stateCount = 0;
-int cityCount = 0;
-int hostCount = 0;
-int urlCount = 0;
-int attackCount = 0;
-
-char ipBuf[64];
-char timeBuf[128];
+#include "insertTest.h"
 
 static int convertInt2IP(unsigned int ipAddress, char *buf) {
 	int i;
@@ -245,5 +226,23 @@ int main(int argc, char **argv){
     printf("select spends %.2f seconds\n", ((double)(end - start)) / (double)CLOCKS_PER_SEC);
     
 sql_close:    sqlite3_close(db);
+
+    char tmpStr[256];
+    bzero(tmpStr, 256);
+
+    int urlLen, randNum, i, j;
+    for (j = 0; j < URL_INSERT_LOOP; j++) {
+        urlLen = rand() % URL_PATH_COUNT + 1;
+        for (i = 0; i < urlLen; i++) {
+            randNum = rand() % URL_PATH_COUNT;
+            sprintf(tmpStr, "%s/%s", tmpStr, pathStr[randNum]);
+        }
+        randNum = rand() % URL_EXT_COUNT;
+        sprintf(tmpStr, "%s/%s", tmpStr, extStr[randNum]);
+
+        printf("%s\n", tmpStr);
+        bzero(tmpStr, 256);
+    }
+
     return 0;
 }

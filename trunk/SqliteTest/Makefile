@@ -14,7 +14,7 @@ test.o:	test.c
 sqliteTest:	test.o
 	${CC} ${CFLAGS} -L/usr/local/lib $^ -o $@ -lsqlite3
 
-insertTest.o:	insertTest.c
+insertTest.o:	insertTest.c insertTest.h
 	${CC} ${CFLAGS} -c $<
 
 insertTest:	insertTest.o
