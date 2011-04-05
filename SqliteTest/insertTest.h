@@ -14,9 +14,9 @@ extern "C" {
 
 #include <sqlite3.h>
 
-#define Z_LOOP 1
+#define Z_LOOP 1000
 //#define Z_LOOP 1 * 1000 * 100
-#define URL_INSERT_LOOP 1 * 1000
+#define URL_INSERT_LOOP 1
 //#define URL_INSERT_LOOP 1 * 1000 * 100
 #define URL_PATH_COUNT 20
 #define URL_EXT_COUNT 5
