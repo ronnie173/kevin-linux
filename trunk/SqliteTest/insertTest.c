@@ -88,6 +88,7 @@ static int testMainLog() {
     
     /* select * from main_log */
     clock_t start = clock();
+    time_t starttime = time(NULL);
     int loop;
     for (loop = 0; loop < Z_LOOP; loop++) {
         rc = sqlite3_exec(db, selectMainLogSql, selectCallback, "mainLogSearch", &zErrMsg);
@@ -99,6 +100,8 @@ static int testMainLog() {
     }
     clock_t end = clock();
     printf("select spends %.2f seconds\n", ((double)(end - start)) / (double)CLOCKS_PER_SEC);
+    time_t endtime = time(NULL);
+    printf("select spends %d seconds\n", (int)(endtime -starttime));
 
 sth_wrong: return 1;
     return 0;
@@ -124,6 +127,7 @@ static int testUrlInsert() {
 
     /* start clock */
     clock_t start = clock();
+    time_t starttime = time(NULL);
 
     for (j = 0; j < URL_INSERT_LOOP; j++) {
         bzero(tmpStr, 256);
@@ -167,6 +171,8 @@ static int testUrlInsert() {
     /* clock stops */
     clock_t end = clock();
     printf("insert spends %.2f seconds\n", ((double)(end - start)) / (double)CLOCKS_PER_SEC);
+    time_t endtime = time(NULL);
+    printf("insert spends %d seconds\n", (int)(endtime - starttime));
 
 sth_wrong: return 1;
     return 0;
