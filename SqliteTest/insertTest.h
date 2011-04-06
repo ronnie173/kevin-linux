@@ -11,16 +11,25 @@ extern "C" {
 #include <string.h>
 #include <time.h>
 #include <strings.h>
-
+#include <ctype.h>
 #include <sqlite3.h>
 
 #define Z_LOOP 1000
 //#define Z_LOOP 1 * 1000 * 100
-#define URL_INSERT_LOOP 1
-//#define URL_INSERT_LOOP 1 * 1000 * 100
 #define URL_PATH_COUNT 20
 #define URL_EXT_COUNT 5
 #define IF_LOG 0
+
+/* parameters start */
+#define INSERT_TABLE    1
+#define SEARCH_TABLE    2
+#define CLEAN_TABLE     3
+
+char *dbName;
+char *tableName;
+int action;
+int loopCount;
+/* parameters end */
 
 char *pathStr[URL_PATH_COUNT] = {
 	"test", "hello", "kevin", "fortinet", "eclipse",
@@ -55,7 +64,6 @@ char *cityCountSql = "select count(id) from city_mapping";
 char *hostCountSql = "select count(id) from host_mapping";
 char *urlCountSql = "select count(id) from url_mapping";
 char *attackCountSql = "select count(id) from attack_mapping";
-char *cleanSql = "delete from main_log";
 char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
         "ml.src_port, ml.dst_ip, ml.dst_port, ml.bandwidth, con.name, "
         "cou.name, sta.name, cit.name, host.name, url.name, att.name "
@@ -69,7 +77,7 @@ char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
         "ml.attack_id = att.id";
 char *selectIDSql = "select id from %s where %s = '%s'";
 char *insertSql = "insert into %s values(NULL, '%s')";
-char *cleanUrlSql = "delete from url_mapping";
+char *cleanSql = "delete from %s";
 
 static int getTableMax();
 static int testMainLog();
@@ -77,6 +85,10 @@ static int testUrlInsert();
 static int convertInt2IP(unsigned int ipAddress, char *buf);
 static int countCallback(void *table, int argc, char **argv, char **azColName);
 static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName);
+static void help(char *command);
+static int insertUrlTable();
+static int searchTable();
+static int cleanTable();
 
 #ifdef __cplusplus
 }

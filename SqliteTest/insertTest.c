@@ -1,21 +1,70 @@
 #include "insertTest.h"
 
 int main(int argc, char **argv){
-    int rc;
-
-    if( argc != 2 ){
-        fprintf(stderr, "Usage: %s DATABASE\n", argv[0]);
+    if (argc < 2) {
+        help(argv[0]);
         exit(1);
     }
 
-    rc = sqlite3_open(argv[1], &db);
+    int c;
+
+    while ((c = getopt(argc, argv, "d:t:cishn:")) != -1) {
+        switch(c) {
+            case 'd' :
+                dbName = optarg;
+            break;
+
+            case 't' :
+                tableName = optarg;
+            break;
+
+            case 'n' :
+                loopCount = atoi(optarg);
+            break;
+
+            case 'h' :
+                help(argv[0]);
+            break;
+
+            case 'c' :
+                action = CLEAN_TABLE;
+            break;
+
+            case 'i' :
+                action = INSERT_TABLE;
+            break;
+
+            case 's' :
+                action = SEARCH_TABLE;
+            break;
+
+            case '?' :
+                if ('d' == optopt) {
+                    printf("database name is required.\n");
+                } else if ('t' == optopt) {
+                    printf("table name is required.\n");
+                } else if ('n' == optopt) {
+                    printf("loop times is required.\n");
+                } else {
+                    printf("Unknown option '-%c'.\n", optopt);
+                }
+                exit(1);
+
+            default :
+                printf("reach getopt default case\n");
+                exit(1);
+        }
+    }
+
+    int rc;
+    rc = sqlite3_open(dbName, &db);
     if (rc) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
 
-    if (!getTableMax()) {
+    /*if (!getTableMax()) {
         printf("getTableMax failed\n");
         goto sql_close;
     }
@@ -23,15 +72,111 @@ int main(int argc, char **argv){
     if (!testMainLog()) {
         printf("testMainLog failed\n");
         goto sql_close;
+    }*/
+
+    switch (action) {
+        case INSERT_TABLE :
+            if (!strcmp("url_mapping", tableName)) {
+                insertUrlTable();
+            }
+        break;
+
+        case SEARCH_TABLE :
+            searchTable();
+        break;
+
+        case CLEAN_TABLE :
+            cleanTable();
+        break;
+
+        default :
+            printf("Unknown action [%d]\n", action);
     }
 
-    if (!testUrlInsert()) {
+    /*if (!testUrlInsert()) {
         printf("testUrlInsert failed\n");
         goto sql_close;
-    }
+    }*/
 
 sql_close:    sqlite3_close(db);
 
+    return 0;
+}
+
+static void help(char *command) {
+    printf("Usage: %s -d dbname -c tablename -h\n", command);
+    printf("\t-d <required> specify database name\n");
+    printf("\t-t specify table name\n");
+    printf("\t-c clean table\n");
+    printf("\t-h print this help\n");
+    printf("\t-i insert table\n");
+    printf("\t-s search table\n");
+    printf("\t-n how many times\n");
+}
+
+static int cleanTable() {
+    printf("clean table [%s]\n", tableName);
+    char sqlBuf[256];
+    bzero(sqlBuf, 256);
+    sprintf(sqlBuf, cleanSql, tableName);
+    printf("cleanSql is [%s]\n", sqlBuf);
+    int rc;
+    rc = sqlite3_exec(db, sqlBuf, 0, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return 1;
+    }
+
+    return 0;
+}
+
+static int insertUrlTable() {
+    int rc;
+    char sqlBuf[512];
+    char tmpStr[256];
+    int urlLen, randNum, i, j;
+
+    printf("insert will loop %d times\n", loopCount);
+
+    /* start clock */
+    clock_t start = clock();
+    time_t starttime = time(NULL);
+
+    for (j = 0; j < loopCount; j++) {
+        bzero(tmpStr, 256);
+
+        urlLen = rand() % URL_PATH_COUNT + 1;
+        for (i = 0; i < urlLen; i++) {
+            randNum = rand() % URL_PATH_COUNT;
+            sprintf(tmpStr, "%s/%s", tmpStr, pathStr[randNum]);
+        }
+        randNum = rand() % URL_EXT_COUNT;
+        sprintf(tmpStr, "%s/%s", tmpStr, extStr[randNum]);
+        if (IF_LOG) printf("%s\n", tmpStr);
+
+        bzero(sqlBuf, 256);
+        sprintf(sqlBuf, insertSql, "url_mapping", tmpStr);
+        if (IF_LOG) printf("insert sql is [%s]\n", sqlBuf);
+        rc = sqlite3_exec(db, sqlBuf, 0, 0, &zErrMsg);
+        if( rc != SQLITE_OK ){
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            sqlite3_free(zErrMsg);
+            goto sth_wrong;
+        }
+    }
+
+    /* clock stops */
+    clock_t end = clock();
+    printf("insert spends %.2f seconds\n", ((double)(end - start)) / (double)CLOCKS_PER_SEC);
+    time_t endtime = time(NULL);
+    printf("insert spends %d seconds\n", (int)(endtime - starttime));
+
+sth_wrong: return 1;
+    return 0;
+}
+
+static int searchTable() {
     return 0;
 }
 
@@ -56,15 +201,6 @@ static int testMainLog() {
     uint url_id; /* int4 not null */
     unsigned short int attack_id; /* int2 not null */
 
-    /* clean main log table */
-    printf("clean main_log table\n");
-    rc = sqlite3_exec(db, cleanSql, 0, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-        goto sth_wrong;
-    }
-    
     /* populate main_log table */
     /* id int8 primary key asc, timestamp datetime not null,
     src_ip int4 not null, src_port int2 not null,
@@ -111,15 +247,6 @@ static int testUrlInsert() {
     int rc;
     char sqlBuf[512];
 
-    /* clean url table */
-    printf("clean url table\n");
-    rc = sqlite3_exec(db, cleanUrlSql, 0, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-        goto sth_wrong;
-    }
-
     char tmpStr[256];
     bzero(tmpStr, 256);
 
@@ -129,7 +256,7 @@ static int testUrlInsert() {
     clock_t start = clock();
     time_t starttime = time(NULL);
 
-    for (j = 0; j < URL_INSERT_LOOP; j++) {
+    for (j = 0; j < loopCount; j++) {
         bzero(tmpStr, 256);
 
         urlLen = rand() % URL_PATH_COUNT + 1;
