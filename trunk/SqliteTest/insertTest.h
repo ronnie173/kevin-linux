@@ -87,8 +87,9 @@ static int countCallback(void *table, int argc, char **argv, char **azColName);
 static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName);
 static void help(char *command);
 static int insertUrlTable();
-static int searchTable();
+static int searchUrlTableByUrl();
 static int cleanTable();
+static int randomURL(char *buf);
 
 #ifdef __cplusplus
 }
