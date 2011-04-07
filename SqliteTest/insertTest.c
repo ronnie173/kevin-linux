@@ -82,7 +82,9 @@ int main(int argc, char **argv){
         break;
 
         case SEARCH_TABLE :
-            searchTable();
+            if (!strcmp("url_mapping", tableName)) {
+                searchUrlTableByUrl();
+            }
         break;
 
         case CLEAN_TABLE :
@@ -176,7 +178,49 @@ sth_wrong: return 1;
     return 0;
 }
 
-static int searchTable() {
+static int searchUrlTableByUrl(char *url) {
+    int rc, i, ncols;
+    sqlite3 *mydb;
+    sqlite3_stmt *stmt;
+    char *sql;
+    const char *tail;
+    char sqlBuf[512], tmpBuf[256];
+
+    rc = sqlite3_open(dbName, &mydb);
+
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(mydb));
+        sqlite3_close(mydb);
+        return 1;
+    }
+
+    sql = "select * from url_mapping where name = '%s'";
+    bzero(tmpBuf, 256);
+    randomURL(tmpBuf);
+    bzero(sqlBuf, 512);
+    sprintf(sqlBuf, sql, tmpBuf);
+    printf("search sql is [%s]\n", sqlBuf);
+    rc = sqlite3_prepare(mydb, sqlBuf, (int)strlen(sqlBuf), &stmt, &tail);
+
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(mydb));
+    }
+
+    rc = sqlite3_step(stmt);
+    ncols = sqlite3_column_count(stmt);
+
+    while (rc == SQLITE_ROW) {
+        for (i = 0; i < ncols; i++) {
+             printf("'%s' ", sqlite3_column_text(stmt, i));
+         }
+
+         printf("\n");
+         rc = sqlite3_step(stmt);
+     }
+
+     sqlite3_finalize(stmt);
+     sqlite3_close(mydb);
+
     return 0;
 }
 
@@ -250,7 +294,7 @@ static int testUrlInsert() {
     char tmpStr[256];
     bzero(tmpStr, 256);
 
-    int urlLen, randNum, i, j;
+    int j;
 
     /* start clock */
     clock_t start = clock();
@@ -258,15 +302,7 @@ static int testUrlInsert() {
 
     for (j = 0; j < loopCount; j++) {
         bzero(tmpStr, 256);
-
-        urlLen = rand() % URL_PATH_COUNT + 1;
-        for (i = 0; i < urlLen; i++) {
-            randNum = rand() % URL_PATH_COUNT;
-            sprintf(tmpStr, "%s/%s", tmpStr, pathStr[randNum]);
-        }
-        randNum = rand() % URL_EXT_COUNT;
-        sprintf(tmpStr, "%s/%s", tmpStr, extStr[randNum]);
-        if (IF_LOG) printf("%s\n", tmpStr);
+        randomURL(tmpStr);
 
         /* check if url exists already */
         bzero(sqlBuf, 256);
@@ -451,6 +487,22 @@ static int getTableMax() {
     }
 
 sth_wrong: return 1;
+
+    return 0;
+}
+
+static int randomURL(char *buf) {
+    int i, urlLen, randNum;
+
+    srandom((unsigned int)time(NULL));
+    urlLen = rand() % URL_PATH_COUNT + 1;
+    for (i = 0; i < urlLen; i++) {
+        randNum = rand() % URL_PATH_COUNT;
+        sprintf(buf, "%s/%s", buf, pathStr[randNum]);
+    }
+    randNum = rand() % URL_EXT_COUNT;
+    sprintf(buf, "%s/%s", buf, extStr[randNum]);
+    if (IF_LOG) printf("%s\n", buf);
 
     return 0;
 }
