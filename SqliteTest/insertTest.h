@@ -12,6 +12,10 @@ extern "C" {
 #include <time.h>
 #include <strings.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <sqlite3.h>
 
 #define Z_LOOP 1000
@@ -21,14 +25,18 @@ extern "C" {
 #define IF_LOG 0
 
 /* parameters start */
-#define INSERT_TABLE    1
-#define SEARCH_TABLE    2
-#define CLEAN_TABLE     3
+#define INSERT_TABLE   1
+#define SEARCH_TABLE   2
+#define CLEAN_TABLE    3
+#define BATCH 			1
+#define NO_BATCH 		0
 
-char *dbName;
-char *tableName;
-int action;
-int loopCount;
+char *dbName = NULL;
+char *tableName = NULL;
+int action = CLEAN_TABLE;
+int loopCount = 0;
+int batchOrNot = NO_BATCH;
+
 /* parameters end */
 
 char *pathStr[URL_PATH_COUNT] = {
@@ -76,7 +84,7 @@ char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
         "ml.host_id = host.id and ml.url_id = url.id and "
         "ml.attack_id = att.id";
 char *selectIDSql = "select id from %s where %s = '%s'";
-char *insertSql = "insert into %s values(NULL, '%s')";
+char *insertSql = "insert into %s values(NULL, '%s');";
 char *cleanSql = "delete from %s";
 
 static int getTableMax();
@@ -86,8 +94,9 @@ static int convertInt2IP(unsigned int ipAddress, char *buf);
 static int countCallback(void *table, int argc, char **argv, char **azColName);
 static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName);
 static void help(char *command);
-static int insertUrlTable();
 static int searchUrlTableByUrl();
+static int insertUrlTable();
+static int insertUrlTableBatch();
 static int cleanTable();
 static int randomURL(char *buf);
 
