@@ -99,6 +99,7 @@ static int insertUrlTable();
 static int insertUrlTableBatch();
 static int cleanTable();
 static int randomURL(char *buf);
+static int searchFirstID(sqlite3 *mydb, char *sql);
 
 #ifdef __cplusplus
 }
