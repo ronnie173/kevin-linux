@@ -284,12 +284,15 @@ sth_wrong: sqlite3_close(mydb);
 }
 
 static int searchUrlTableByUrl(char *url) {
-    int rc, i, ncols;
+    int rc, j, id;
     sqlite3 *mydb;
-    sqlite3_stmt *stmt;
-    char *sql;
-    const char *tail;
+    char *sql = "select id from url_mapping where name = '%s'";
     char sqlBuf[512], tmpBuf[256];
+
+    if (loopCount <= 0) {
+        printf("loopCount is wrong [%d]\n", loopCount);
+        return 0;
+    }
 
     rc = sqlite3_open(dbName, &mydb);
 
@@ -299,34 +302,63 @@ static int searchUrlTableByUrl(char *url) {
         return 1;
     }
 
-    sql = "select * from url_mapping where name = '%s'";
-    bzero(tmpBuf, 256);
-    randomURL(tmpBuf);
-    bzero(sqlBuf, 512);
-    sprintf(sqlBuf, sql, tmpBuf);
-    printf("search sql is [%s]\n", sqlBuf);
-    rc = sqlite3_prepare(mydb, sqlBuf, (int)strlen(sqlBuf), &stmt, &tail);
+    /* start clock */
+    clock_t start = clock();
+    time_t starttime = time(NULL);
+
+    for (j = 0; j < loopCount; j++) {
+        bzero(tmpBuf, 256);
+        randomURL(tmpBuf);
+        bzero(sqlBuf, 512);
+        sprintf(sqlBuf, sql, tmpBuf);
+        if (IF_LOG) printf("search sql is [%s]\n", sqlBuf);
+
+        id = searchFirstID(mydb, sqlBuf);
+        if (id > 0) {
+            printf("found id %d\n", id);
+            printf("search sql is [%s]\n", sqlBuf);
+        }
+    }
+
+    /* clock stops */
+    clock_t end = clock();
+    printf("search by url spends %.2f seconds\n", ((double)(end - start)) / (double)CLOCKS_PER_SEC);
+    time_t endtime = time(NULL);
+    printf("search by url spends %d seconds\n", (int)(endtime - starttime));
+
+    sqlite3_close(mydb);
+
+    return 0;
+}
+
+static int searchFirstID(sqlite3 *mydb, char *sql) {
+    int rc, id;
+    sqlite3_stmt *stmt;
+    const char *tail;
+
+    rc = sqlite3_prepare(mydb, sql, (int)strlen(sql), &stmt, &tail);
 
     if (rc != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(mydb));
+        return -1;
     }
 
     rc = sqlite3_step(stmt);
-    ncols = sqlite3_column_count(stmt);
 
-    while (rc == SQLITE_ROW) {
-        for (i = 0; i < ncols; i++) {
-             printf("'%s' ", sqlite3_column_text(stmt, i));
-         }
+    if (rc == SQLITE_ROW) {
+        if (!strcmp("id", sqlite3_column_name(stmt, 0))) {
+            char *tmpStr = sqlite3_column_text(stmt, 0);
+            id = atoi(tmpStr);
+        } else {
+            printf("column name is NOT id\n");
+        }
+    } else {
+         if (IF_LOG) printf("can not find id\n");
+    }
 
-         printf("\n");
-         rc = sqlite3_step(stmt);
-     }
+    sqlite3_finalize(stmt);
 
-     sqlite3_finalize(stmt);
-     sqlite3_close(mydb);
-
-    return 0;
+    return id;
 }
 
 static int testMainLog() {
@@ -360,8 +392,8 @@ static int testMainLog() {
     city_id int4, host_id int4 not null, url_id int4 not null,
     attack_id int2 not null */
     sprintf(insertSql, "insert into main_log values(%lu, %u, %u, %hu,"
-            " %u, %hu, %hu, %u, %u, %u, %u, %u, %u, %u)", 1, time(0),
-            996941108, 80, 3232235777, 8080, 100, 1, 1, 1, 1, 1, 1, 1);
+            " %u, %hu, %hu, %u, %u, %u, %u, %u, %u, %u)", 1uL, (uint)time(0),
+            996941108u, 80, 3232235777u, 8080, 100, 1, 1, 1, 1, 1, 1, 1);
     
     printf("insertSql is [%s]\n", insertSql);
     rc = sqlite3_exec(db, insertSql, 0, 0, &zErrMsg);
