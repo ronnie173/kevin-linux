@@ -28,6 +28,8 @@ extern "C" {
 #define INSERT_TABLE   1
 #define SEARCH_TABLE   2
 #define CLEAN_TABLE    3
+#define MAX_VALUE	    4
+
 #define BATCH 			1
 #define NO_BATCH 		0
 
@@ -57,21 +59,10 @@ int cityCount = 0;
 int hostCount = 0;
 int urlCount = 0;
 int attackCount = 0;
-unsigned int selectID = 0;
 
 char ipBuf[64];
 char timeBuf[128];
 
-sqlite3 *db;
-char *zErrMsg = 0;
-
-char *continentCountSql = "select count(id) from continent_mapping";
-char *countryCountSql = "select count(id) from country_mapping";
-char *stateCountSql = "select count(id) from state_mapping";
-char *cityCountSql = "select count(id) from city_mapping";
-char *hostCountSql = "select count(id) from host_mapping";
-char *urlCountSql = "select count(id) from url_mapping";
-char *attackCountSql = "select count(id) from attack_mapping";
 char *selectMainLogSql = "select ml.id, ml.timestamp, ml.src_ip, "
         "ml.src_port, ml.dst_ip, ml.dst_port, ml.bandwidth, con.name, "
         "cou.name, sta.name, cit.name, host.name, url.name, att.name "

@@ -10,7 +10,7 @@ int main(int argc, char **argv){
 
     int c;
 
-    while ((c = getopt(argc, argv, "d:t:cishn:b")) != -1) {
+    while ((c = getopt(argc, argv, "d:t:cishn:bm")) != -1) {
         switch(c) {
             case 'd' :
                 dbName = optarg;
@@ -40,6 +40,10 @@ int main(int argc, char **argv){
                 action = SEARCH_TABLE;
             break;
 
+            case 'm' :
+                action = MAX_VALUE;
+            break;
+
             case 'b' :
                 batchOrNot = BATCH;
             break;
@@ -62,23 +66,9 @@ int main(int argc, char **argv){
         }
     }
 
-    /*int rc;
-    rc = sqlite3_open(dbName, &db);
-    if (rc) {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        exit(1);
-    }*/
+    //getTableMax();
 
-    /*if (!getTableMax()) {
-        printf("getTableMax failed\n");
-        goto sql_close;
-    }
-
-    if (!testMainLog()) {
-        printf("testMainLog failed\n");
-        goto sql_close;
-    }*/
+    //testMainLog();
 
     switch (action) {
         case INSERT_TABLE :
@@ -101,16 +91,15 @@ int main(int argc, char **argv){
             cleanTable();
         break;
 
+        case MAX_VALUE :
+            getTableMax();
+        break;
+
         default :
             printf("Unknown action [%d]\n", action);
     }
 
-    /*if (!testUrlInsert()) {
-        printf("testUrlInsert failed\n");
-        goto sql_close;
-    }*/
-
-//sql_close:    sqlite3_close(db);
+    //testUrlInsert();
 
     return 0;
 }
@@ -124,11 +113,12 @@ static void help(char *command) {
     printf("\t-i insert table\n");
     printf("\t-s search table\n");
     printf("\t-n how many times\n");
+    printf("\t-b batch processing\n");
 }
 
 static int cleanTable() {
     printf("clean table [%s]\n", tableName);
-    char sqlBuf[256];
+    char sqlBuf[256], *zErrMsg;
     bzero(sqlBuf, 256);
     sqlite3 *mydb;
     int rc;
@@ -156,8 +146,7 @@ static int cleanTable() {
 
 static int insertUrlTable() {
     int rc, j;
-    char sqlBuf[512];
-    char tmpStr[256];
+    char sqlBuf[512], tmpStr[256], *zErrMsg;
 
     sqlite3 *mydb;
 
@@ -205,9 +194,8 @@ static int insertUrlTableBatch() {
 	printf("get into insertUrlTableBatch()\n");
 	
 	int rc, j, ret = 0;
-    char *bigBuf;
-    char sqlBuf[300];
-    char tmpStr[256];
+    char *bigBuf, *zErrMsg;
+    char sqlBuf[300], tmpStr[256];
     char *tmpFn = "./sql.txt";
     char *urlInsertSql = "insert into url_mapping values(NULL, '%s');";
     
@@ -332,7 +320,7 @@ static int searchUrlTableByUrl(char *url) {
 }
 
 static int searchFirstID(sqlite3 *mydb, char *sql) {
-    int rc, id;
+    int rc, id = -1;
     sqlite3_stmt *stmt;
     const char *tail;
 
@@ -347,8 +335,7 @@ static int searchFirstID(sqlite3 *mydb, char *sql) {
 
     if (rc == SQLITE_ROW) {
         if (!strcmp("id", sqlite3_column_name(stmt, 0))) {
-            char *tmpStr = sqlite3_column_text(stmt, 0);
-            id = atoi(tmpStr);
+            id = (int)sqlite3_column_int64(stmt, 0);
         } else {
             printf("column name is NOT id\n");
         }
@@ -363,7 +350,8 @@ static int searchFirstID(sqlite3 *mydb, char *sql) {
 
 static int testMainLog() {
     int rc;
-    char insertSql[512];
+    sqlite3 *mydb;
+    char insertSql[512], *zErrMsg;
 
     sqlite3_uint64 id; /* int8 primary key asc */
     time_t timestamp; /* datetime not null */
@@ -382,6 +370,13 @@ static int testMainLog() {
     uint url_id; /* int4 not null */
     unsigned short int attack_id; /* int2 not null */
 
+    rc = sqlite3_open(dbName, &mydb);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(mydb));
+        sqlite3_close(mydb);
+        return 1;
+    }
+
     /* populate main_log table */
     /* id int8 primary key asc, timestamp datetime not null,
     src_ip int4 not null, src_port int2 not null,
@@ -396,7 +391,7 @@ static int testMainLog() {
             996941108u, 80, 3232235777u, 8080, 100, 1, 1, 1, 1, 1, 1, 1);
     
     printf("insertSql is [%s]\n", insertSql);
-    rc = sqlite3_exec(db, insertSql, 0, 0, &zErrMsg);
+    rc = sqlite3_exec(mydb, insertSql, 0, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -408,7 +403,7 @@ static int testMainLog() {
     time_t starttime = time(NULL);
     int loop;
     for (loop = 0; loop < Z_LOOP; loop++) {
-        rc = sqlite3_exec(db, selectMainLogSql, selectCallback, "mainLogSearch", &zErrMsg);
+        rc = sqlite3_exec(mydb, selectMainLogSql, selectCallback, "mainLogSearch", &zErrMsg);
         if( rc != SQLITE_OK ){
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
@@ -420,18 +415,30 @@ static int testMainLog() {
     time_t endtime = time(NULL);
     printf("select spends %d seconds\n", (int)(endtime -starttime));
 
-sth_wrong: return 1;
+sth_wrong: sqlite3_close(mydb);
     return 0;
 }
 
 static int testUrlInsert() {
     int rc;
-    char sqlBuf[512];
+    char sqlBuf[512], tmpStr[256], *zErrMsg;
+    sqlite3 *mydb;
 
-    char tmpStr[256];
     bzero(tmpStr, 256);
 
     int j;
+
+    if (loopCount <= 0) {
+        printf("loopCount is wrong [%d]\n", loopCount);
+        return 0;
+    }
+
+    rc = sqlite3_open(dbName, &mydb);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(mydb));
+        sqlite3_close(mydb);
+        return 1;
+    }
 
     /* start clock */
     clock_t start = clock();
@@ -443,23 +450,19 @@ static int testUrlInsert() {
 
         /* check if url exists already */
         bzero(sqlBuf, 256);
-        selectID = 0;
+        unsigned int selectID = 0;
+
         sprintf(sqlBuf, selectIDSql, "url_mapping", "name", tmpStr);
         if (IF_LOG) printf("select sql is [%s]\n", sqlBuf);
-        rc = sqlite3_exec(db, sqlBuf, selectCallback, "urlSearch", &zErrMsg);
-        if( rc != SQLITE_OK ){
-            fprintf(stderr, "SQL error: %s\n", zErrMsg);
-            sqlite3_free(zErrMsg);
-            goto sth_wrong;
-        }
 
+        selectID = searchFirstID(mydb, sqlBuf);
         if (selectID > 0) {
             printf("url exists with id [%u] - [%s]\n", selectID, tmpStr);
         } else {
             bzero(sqlBuf, 256);
             sprintf(sqlBuf, insertSql, "url_mapping", tmpStr);
             if (IF_LOG) printf("insert sql is [%s]\n", sqlBuf);
-            rc = sqlite3_exec(db, sqlBuf, 0, 0, &zErrMsg);
+            rc = sqlite3_exec(mydb, sqlBuf, 0, 0, &zErrMsg);
             if( rc != SQLITE_OK ){
                 fprintf(stderr, "SQL error: %s\n", zErrMsg);
                 sqlite3_free(zErrMsg);
@@ -474,7 +477,7 @@ static int testUrlInsert() {
     time_t endtime = time(NULL);
     printf("insert spends %d seconds\n", (int)(endtime - starttime));
 
-sth_wrong: return 1;
+sth_wrong:     sqlite3_close(mydb);
     return 0;
 }
 
@@ -553,12 +556,6 @@ static int selectCallback(void *action, int argc, char **argv, char **azColName)
             //printf("%s = %s\n", colName, colVal);
         }
         //printf("\n");
-    } else if (!strcmp("urlSearch", actionStr)) {
-        if (argc > 0) {
-            selectID = atoi(argv[0]);
-        } else {
-            selectID = 0;
-        }
     }
 
     return 0;
@@ -566,9 +563,25 @@ static int selectCallback(void *action, int argc, char **argv, char **azColName)
 
 static int getTableMax() {
     int rc;
+    char *zErrMsg;
+    sqlite3 *mydb;
+    char *continentCountSql = "select count(id) from continent_mapping";
+    char *countryCountSql = "select count(id) from country_mapping";
+    char *stateCountSql = "select count(id) from state_mapping";
+    char *cityCountSql = "select count(id) from city_mapping";
+    char *hostCountSql = "select count(id) from host_mapping";
+    char *urlCountSql = "select count(id) from url_mapping";
+    char *attackCountSql = "select count(id) from attack_mapping";
+
+    rc = sqlite3_open(dbName, &mydb);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(mydb));
+        sqlite3_close(mydb);
+        return 1;
+    }
 
     printf("sql is [%s]\n", continentCountSql);
-    rc = sqlite3_exec(db, continentCountSql, countCallback, "continent", &zErrMsg);
+    rc = sqlite3_exec(mydb, continentCountSql, countCallback, "continent", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -576,7 +589,7 @@ static int getTableMax() {
     }
 
     printf("sql is [%s]\n", countryCountSql);
-    rc = sqlite3_exec(db, countryCountSql, countCallback, "country", &zErrMsg);
+    rc = sqlite3_exec(mydb, countryCountSql, countCallback, "country", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -584,7 +597,7 @@ static int getTableMax() {
     }
 
     printf("sql is [%s]\n", stateCountSql);
-    rc = sqlite3_exec(db, stateCountSql, countCallback, "state", &zErrMsg);
+    rc = sqlite3_exec(mydb, stateCountSql, countCallback, "state", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -592,7 +605,7 @@ static int getTableMax() {
     }
 
     printf("sql is [%s]\n", cityCountSql);
-    rc = sqlite3_exec(db, cityCountSql, countCallback, "city", &zErrMsg);
+    rc = sqlite3_exec(mydb, cityCountSql, countCallback, "city", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -600,7 +613,7 @@ static int getTableMax() {
     }
 
     printf("sql is [%s]\n", hostCountSql);
-    rc = sqlite3_exec(db, hostCountSql, countCallback, "host", &zErrMsg);
+    rc = sqlite3_exec(mydb, hostCountSql, countCallback, "host", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -608,7 +621,7 @@ static int getTableMax() {
     }
 
     printf("sql is [%s]\n", urlCountSql);
-    rc = sqlite3_exec(db, urlCountSql, countCallback, "url", &zErrMsg);
+    rc = sqlite3_exec(mydb, urlCountSql, countCallback, "url", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -616,14 +629,14 @@ static int getTableMax() {
     }
 
     printf("sql is [%s]\n", attackCountSql);
-    rc = sqlite3_exec(db, attackCountSql, countCallback, "attack", &zErrMsg);
+    rc = sqlite3_exec(mydb, attackCountSql, countCallback, "attack", &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
         goto sth_wrong;
     }
 
-sth_wrong: return 1;
+sth_wrong: sqlite3_close(mydb);
 
     return 0;
 }

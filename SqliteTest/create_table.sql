@@ -32,15 +32,21 @@ create table host_mapping (
     name character(128) not null
 );
 
+create index host_index on host_mapping(name);
+
 create table url_mapping (
     id integer primary key autoincrement,
     name character(256) not null
 );
 
+create index url_index on url_mapping(name);
+
 create table attack_mapping (
     id int2 primary key asc,
     name character(64) not null
 );
+
+create index attack_index on attack_mapping(name);
 
 create table main_log (
     id int8 primary key asc,
