@@ -8,6 +8,9 @@ PROGS =	sqliteTest insertTest
 
 all:	${PROGS}
 
+strmap.o:	strmap.c strmap.h
+	${CC} ${CFLAGS} -c $<
+
 test.o:	test.c
 	${CC} ${CFLAGS} -c $<
 
@@ -17,7 +20,7 @@ sqliteTest:	test.o
 insertTest.o:	insertTest.c insertTest.h
 	${CC} ${CFLAGS} -c $<
 
-insertTest:	insertTest.o
+insertTest:	insertTest.o strmap.o
 	${CC} ${CFLAGS} -L/usr/local/lib $^ -o $@ -lsqlite3
 
 myzip:
