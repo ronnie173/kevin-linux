@@ -8,27 +8,27 @@ drop table if exists attack_mapping;
 drop table if exists main_log;
 
 create table continent_mapping (
-    id int1 primary key asc,
+    id integer primary key autoincrement,
     name character(20) not null
 );
      
 create table country_mapping (
-    id int2 primary key asc,
+    id integer primary key autoincrement,
     name character(40) not null
 );
 
 create table state_mapping (
-    id int4 primary key asc,
+    id integer primary key autoincrement,
     name character(40) not null
 );
 
 create table city_mapping (
-    id int4 primary key asc,
+    id integer primary key autoincrement,
     name character(40) not null
 );
 
 create table host_mapping (
-    id int4 primary key asc,
+    id integer primary key autoincrement,
     name character(128) not null
 );
 
@@ -42,14 +42,14 @@ create table url_mapping (
 create index url_index on url_mapping(name);
 
 create table attack_mapping (
-    id int2 primary key asc,
+    id integer primary key autoincrement,
     name character(64) not null
 );
 
 create index attack_index on attack_mapping(name);
 
 create table main_log (
-    id int8 primary key asc,
+    id integer primary key autoincrement,
     timestamp datetime not null,
     src_ip int4 not null,
     src_port int2 not null,
