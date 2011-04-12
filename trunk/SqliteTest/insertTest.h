@@ -33,11 +33,15 @@ extern "C" {
 #define BATCH 			1
 #define NO_BATCH 		0
 
+#define UNIQUE 			1
+#define NO_UNIQUE 		0
+
 char *dbName = NULL;
 char *tableName = NULL;
 int action = CLEAN_TABLE;
 int loopCount = 0;
 int batchOrNot = NO_BATCH;
+int uniqueOrNot = NO_UNIQUE;
 
 /* parameters end */
 
@@ -80,7 +84,8 @@ char *cleanSql = "delete from %s";
 
 static int getTableMax();
 static int testMainLog();
-static int testUrlInsert();
+static int urlSearchInsert();
+static int urlSearchInsertBatch();
 static int convertInt2IP(unsigned int ipAddress, char *buf);
 static int countCallback(void *table, int argc, char **argv, char **azColName);
 static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName);
