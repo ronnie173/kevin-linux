@@ -10,7 +10,7 @@ int main(int argc, char **argv){
 
     int c;
 
-    while ((c = getopt(argc, argv, "d:t:cishn:bm")) != -1) {
+    while ((c = getopt(argc, argv, "d:t:cishn:bmu")) != -1) {
         switch(c) {
             case 'd' :
                 dbName = optarg;
@@ -48,6 +48,10 @@ int main(int argc, char **argv){
                 batchOrNot = BATCH;
             break;
 
+            case 'u' :
+                uniqueOrNot = UNIQUE;
+            break;
+
             case '?' :
                 if ('d' == optopt) {
                     printf("database name is required.\n");
@@ -73,8 +77,12 @@ int main(int argc, char **argv){
     switch (action) {
         case INSERT_TABLE :
             if (!strcmp("url_mapping", tableName)) {
-            	if (batchOrNot) {
+            	if (batchOrNot && uniqueOrNot) {
+            		urlSearchInsertBatch();
+            	} else if (batchOrNot) {
             		insertUrlTableBatch();
+            	} else if (uniqueOrNot) {
+            		urlSearchInsert();
             	} else {
             		insertUrlTable();
             	}
@@ -114,6 +122,7 @@ static void help(char *command) {
     printf("\t-s search table\n");
     printf("\t-n how many times\n");
     printf("\t-b batch processing\n");
+    printf("\t-u unique processing\n");
 }
 
 static int cleanTable() {
@@ -419,7 +428,7 @@ sth_wrong: sqlite3_close(mydb);
     return 0;
 }
 
-static int testUrlInsert() {
+static int urlSearchInsert() {
     int rc;
     char sqlBuf[512], tmpStr[256], *zErrMsg;
     sqlite3 *mydb;
@@ -450,7 +459,7 @@ static int testUrlInsert() {
 
         /* check if url exists already */
         bzero(sqlBuf, 256);
-        unsigned int selectID = 0;
+        int selectID = 0;
 
         sprintf(sqlBuf, selectIDSql, "url_mapping", "name", tmpStr);
         if (IF_LOG) printf("select sql is [%s]\n", sqlBuf);
@@ -469,6 +478,95 @@ static int testUrlInsert() {
                 goto sth_wrong;
             }
         }
+    }
+
+    /* clock stops */
+    clock_t end = clock();
+    printf("insert spends %.2f seconds\n", ((double)(end - start)) / (double)CLOCKS_PER_SEC);
+    time_t endtime = time(NULL);
+    printf("insert spends %d seconds\n", (int)(endtime - starttime));
+
+sth_wrong:     sqlite3_close(mydb);
+    return 0;
+}
+
+static int urlSearchInsertBatch() {
+    char *tmpFn = "./sql.txt";
+    int rc;
+    char sqlBuf[512], tmpStr[256], *bigBuf, *zErrMsg;
+    sqlite3 *mydb;
+    char *urlInsertSql = "insert into url_mapping values(NULL, '%s');";
+
+    bzero(tmpStr, 256);
+
+    int j;
+
+    if (loopCount <= 0) {
+        printf("loopCount is wrong [%d]\n", loopCount);
+        return 0;
+    }
+    printf("insert will loop %d times\n", loopCount);
+
+    FILE *tmpFile = fopen(tmpFn, "w+");
+    fprintf(tmpFile, "%s\n", "begin transaction;");
+    
+    rc = sqlite3_open(dbName, &mydb);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(mydb));
+        sqlite3_close(mydb);
+        return 1;
+    }
+
+    /* start clock */
+    clock_t start = clock();
+    time_t starttime = time(NULL);
+
+    for (j = 0; j < loopCount; j++) {
+        bzero(tmpStr, 256);
+        randomURL(tmpStr);
+
+        /* check if url exists already */
+        bzero(sqlBuf, 512);
+        int selectID = 0;
+
+        sprintf(sqlBuf, selectIDSql, "url_mapping", "name", tmpStr);
+        if (IF_LOG) printf("select sql is [%s]\n", sqlBuf);
+
+        selectID = searchFirstID(mydb, sqlBuf);
+        if (selectID > 0) {
+            printf("url exists with id [%u] - [%s]\n", selectID, tmpStr);
+        } else {
+			bzero(sqlBuf, 300);
+			sprintf(sqlBuf, urlInsertSql, tmpStr);
+            fprintf(tmpFile, "%s\n", sqlBuf);
+        }
+    }
+    fprintf(tmpFile, "%s\n", "commit;");
+    fclose(tmpFile);
+
+    struct stat st;
+    stat(tmpFn, &st);
+    int size = (int)st.st_size;
+    printf("file size is %d\n", size);
+    bigBuf = malloc(size);
+    bzero(bigBuf, size);
+
+    
+    int fd, len;
+    fd = open(tmpFn, O_RDONLY);
+    len = (int)read(fd, bigBuf, (size_t)size);
+    close(fd);
+    printf("read %d bytes\n", len);
+    if (len != size) {
+    	printf("read file error\n");
+    	goto sth_wrong;
+    }
+
+    rc = sqlite3_exec(mydb, bigBuf, 0, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        goto sth_wrong;
     }
 
     /* clock stops */
