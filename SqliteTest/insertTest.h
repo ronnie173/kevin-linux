@@ -18,10 +18,14 @@ extern "C" {
 
 #include <sqlite3.h>
 
+#include "strmap.h"
+
 #define Z_LOOP 1000
 //#define Z_LOOP 1 * 1000 * 100
 #define URL_PATH_COUNT 20
 #define URL_EXT_COUNT 5
+#define HOST_NAME_COUNT 20
+#define HOST_EXT_COUNT 5
 #define IF_LOG 0
 
 /* parameters start */
@@ -29,12 +33,16 @@ extern "C" {
 #define SEARCH_TABLE   2
 #define CLEAN_TABLE    3
 #define MAX_VALUE	    4
+#define TEST_HOST_URL  5
 
 #define BATCH 			1
 #define NO_BATCH 		0
 
 #define UNIQUE 			1
 #define NO_UNIQUE 		0
+
+#define MAP_FOUND		1
+#define MAP_NOT_FOUND	0
 
 char *dbName = NULL;
 char *tableName = NULL;
@@ -54,6 +62,17 @@ char *pathStr[URL_PATH_COUNT] = {
 
 char *extStr[URL_EXT_COUNT] = {
     "check.asp", "input.php", "out.jsp", "delete.do", "update.action"
+};
+
+char *hostNameStr[HOST_NAME_COUNT] = {
+	"sina", "ibm", "nba", "fortinet", "hp",
+	"bofa", "bmo", "yahoo", "sohu", "google",
+	"nike", "ea", "cisco", "juniper", "hillstone",
+	"apahce", "grandstream", "spirent", "sybase", "oracle"
+};
+
+char *hostExtStr[HOST_EXT_COUNT] = {
+    ".com", ".org", ".net", ".cn", ".edu"
 };
 
 int continentCount = 0;
@@ -92,10 +111,16 @@ static int selectCallback(void *NotUsed, int argc, char **argv, char **azColName
 static void help(char *command);
 static int searchUrlTableByUrl();
 static int insertUrlTable();
-static int insertUrlTableBatch();
+static int insertTableBatch();
+static int hostUrlSearchInsertBatch();
 static int cleanTable();
 static int randomURL(char *buf);
+static int randomHost(char *buf);
 static int searchFirstID(sqlite3 *mydb, char *sql);
+static int mapSearch(StrMap *map, const char *key, char *buf);
+static int mapSearchInsert(StrMap *map, const char *key, const char *value);
+
+static void testHostUrl();
 
 #ifdef __cplusplus
 }
