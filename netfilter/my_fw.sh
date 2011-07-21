@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Parameter settings
-  EXTIF="eth1"           # To public interface
-  INIF="eth0"            # To internal interface
+  EXTIF="eth0"           # To public interface
+  INIF="eth2"            # To internal interface
   INNET="192.168.1.0/24" # Internal subnet
   export EXTIF INIF INNET
 
@@ -105,4 +105,4 @@
 #          -j DNAT --to-destination 192.168.1.100
 
 # 6. save the config
-  /etc/init.d/iptables save
+  iptables-save
