@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Parameter settings
-  EXTIF="eth0"           # To public interface
+  EXTIF="eth1"           # To public interface
   INIF="eth2"            # To internal interface
-  INNET="192.168.1.0/24" # Internal subnet
+  INNET="10.11.0.0/24" # Internal subnet
   export EXTIF INIF INNET
 
 # Part one, firewall unit settings
