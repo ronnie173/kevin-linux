@@ -1,0 +1,33 @@
+auto lo
+iface lo inet loopback
+
+# eth0 to external
+auto eth0
+iface eth0 inet static
+#address 10.0.0.129
+#netmask 255.255.255.0
+#broadcast 10.0.0.255
+#network 10.0.0.0
+#gateway 10.0.0.1
+address 172.22.14.56
+netmask 255.255.255.0
+broadcast 172.22.14.255
+network 172.22.14.0
+gateway 172.22.14.1
+
+# eth1 to internal
+auto eth1
+iface eth1 inet static
+address 10.21.130.1
+netmask 255.255.0.0
+broadcast 10.21.255.255
+network 10.21.0.0
+
+# eth2 to internal
+auto eth2
+iface eth2 inet static
+address 10.11.130.1
+netmask 255.255.0.0
+broadcast 10.11.255.255
+network 10.11.0.0
+
