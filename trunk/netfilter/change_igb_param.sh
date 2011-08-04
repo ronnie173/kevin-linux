@@ -7,7 +7,7 @@ echo "list modules after rmmod"
 lsmod | grep igb
 sleep 1
 
-modprobe igb InterruptThrottleRate=50000,50000 RSS=0,0 IntMode=2,2 QueuePairs=1,1
+modprobe igb InterruptThrottleRate=5000,5000 RSS=0,0 IntMode=2,2 QueuePairs=1,1
 sleep 2
 
 echo "list modules after modprobe"
