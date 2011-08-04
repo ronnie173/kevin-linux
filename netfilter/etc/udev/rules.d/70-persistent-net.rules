@@ -1,0 +1,14 @@
+# This file maintains persistent names for network interfaces.
+# See udev(7) for syntax.
+#
+# Entries are automatically added by the 75-persistent-net-generator.rules
+# file; however you are also free to add your own entries.
+
+# PCI device 0x14e4:0x165a (tg3)
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="00:26:b9:67:ac:a5", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="eth0"
+
+# PCI device 0x8086:0x10c9 (igb)
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="00:1b:21:a7:a8:79", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="eth2"
+
+# PCI device 0x8086:0x10c9 (igb)
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="00:1b:21:a7:a8:78", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="eth1"
