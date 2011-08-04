@@ -10,10 +10,12 @@
 # Part one, set smp affinity
 # let cpu0 and cpu1 handle extif irq
 echo "3" > /proc/irq/$EXTIF_IRQ/smp_affinity
+#echo "1" > /proc/irq/$EXTIF_IRQ/smp_affinity
 echo "/proc/irq/$EXTIF_IRQ/smp_affinity"
 cat /proc/irq/$EXTIF_IRQ/smp_affinity
 
 # let cpu2 and cpu3 handle inif irq
 echo "c" > /proc/irq/$INIF_IRQ/smp_affinity
+#echo "8" > /proc/irq/$INIF_IRQ/smp_affinity
 echo "/proc/irq/$INIF_IRQ/smp_affinity"
 cat /proc/irq/$INIF_IRQ/smp_affinity

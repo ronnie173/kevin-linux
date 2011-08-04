@@ -66,15 +66,44 @@ my $nic = $ARGV[0];
 my $command;
 my $int_num;
 my $nic_name;
+my $goodCommand;
 
 foreach $_ (`cat /proc/interrupts | grep $nic`) {
     print "$_\n";
-    ($int_num) = /(\d{1,3}:)/;
+    ($int_num) = /(\d{1,3}):/;
     ($nic_name) = /.*($nic.*)$/;
     print "device $nic_name is at interrupt $int_num\n";
 
-    if ($nic_name =~ /usb4/) {
-        print "we see usb4 at $nic_name\n"
+    $goodCommand = 1;
+    if ($nic_name =~ /TxRx-0/) {
+        $command = "echo 1 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-1/) {
+        $command = "echo 2 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-2/) {
+        $command = "echo 4 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-3/) {
+        $command = "echo 8 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /^$nic$/) {
+        $command = "echo f > /proc/irq/$int_num/smp_affinity";
+    }
+    else {
+        $goodCommand = 0;
+    }
+
+    if ($goodCommand) {
+        print "$command\n";
+        print "before set affinity\n";
+        print `cat /proc/irq/$int_num/smp_affinity`;
+        system($command);
+        print "after set affinity\n";
+        print `cat /proc/irq/$int_num/smp_affinity`;
+    }
+    else {
+        print "unknown device [$nic_name]\n";
     }
 
 #    $fn = fn_trim($fn);
