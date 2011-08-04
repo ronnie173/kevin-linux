@@ -1,13 +1,24 @@
 #!/bin/bash
+echo "remove module igb"
 rmmod igb
 sleep 2
 
-modprobe igb InterruptThrottleRate=8000,8000 RSS=4,4 IntMode=2,2 QueuePairs=1,1
+echo "list modules after rmmod"
+lsmod | grep igb
+sleep 1
+
+modprobe igb InterruptThrottleRate=50000,50000 RSS=0,0 IntMode=2,2 QueuePairs=1,1
 sleep 2
 
+echo "list modules after modprobe"
+lsmod | grep igb
+sleep 1
+
+echo "stop network service"
 /etc/init.d/networking stop
 sleep 5
 
+echo "start network service"
 /etc/init.d/networking start
 sleep 5
 
