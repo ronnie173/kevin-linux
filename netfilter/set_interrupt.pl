@@ -105,10 +105,5 @@ foreach $_ (`cat /proc/interrupts | grep $nic`) {
     else {
         print "unknown device [$nic_name]\n";
     }
-
-#    $fn = fn_trim($fn);
-#    $command = "cp $src_dir/$fn $dest_dir/$fn\n";
-#    print $command;
-#    system($command);
 }
 
