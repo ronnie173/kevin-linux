@@ -129,6 +129,7 @@ iptables -A INPUT -p TCP -i $EXTIF --dport  2921 --sport 1024:65534 -j REJECT # 
   if [ "$INIF" != "" ]; then
     iptables -A INPUT -i $INIF -j ACCEPT
     echo "1" > /proc/sys/net/ipv4/ip_forward
+
     if [ "$INNET" != "" ]; then
         for innet in $INNET
         do
