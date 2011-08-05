@@ -50,11 +50,11 @@ sub fn_trim($) {
 my $numArgs = $#ARGV + 1;
 print "I see $numArgs arguments.\n";
 
-if ($numArgs < 1) {
+if ($numArgs < 2) {
     print "This tool will search nic interrupts and set ";
     print "cpu affinity\n";
-    print "Usage: set_interrupt.pl <eth1>\n";
-    print "Example: set_interrupt.pl eth1\n";
+    print "Usage: set_interrupt.pl <eth1> <base>\n";
+    print "Example: set_interrupt.pl eth1 0\n";
     exit 1;
 }
 
@@ -63,6 +63,7 @@ foreach $numArgs (0 .. $#ARGV) {
 }
 
 my $nic = $ARGV[0];
+my $base = $ARGV[1];
 my $command;
 my $int_num;
 my $nic_name;
@@ -76,31 +77,31 @@ foreach $_ (`cat /proc/interrupts | grep $nic`) {
 
     $goodCommand = 1;
     if ($nic_name =~ /TxRx-0/) {
-        $command = "echo 10 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 1$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-1/) {
-        $command = "echo 20 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 2$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-2/) {
-        $command = "echo 40 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 4$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-3/) {
-        $command = "echo 80 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 8$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-4/) {
-        $command = "echo 100 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 10$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-5/) {
-        $command = "echo 200 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 20$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-6/) {
-        $command = "echo 400 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 40$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-7/) {
-        $command = "echo 800 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 80$base > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /^$nic$/) {
-        $command = "echo fffff0 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo fffff$base > /proc/irq/$int_num/smp_affinity";
     }
     else {
         $goodCommand = 0;
