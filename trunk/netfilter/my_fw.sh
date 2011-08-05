@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Parameter settings
-  EXTIF="eth1"           # To public interface
-  INIF="eth2"            # To internal interface
+  EXTIF="eth4"           # To public interface
+  INIF="eth5"            # To internal interface
   INNET="10.11.0.0/16" # Internal subnet
   export EXTIF INIF INNET
 
@@ -132,7 +132,8 @@ iptables -A INPUT -p TCP -i $EXTIF --dport  2921 --sport 1024:65534 -j REJECT # 
     if [ "$INNET" != "" ]; then
         for innet in $INNET
         do
-            iptables -t nat -A POSTROUTING -s $innet -o $EXTIF -j MASQUERADE
+            #iptables -t nat -A POSTROUTING -s $innet -o $EXTIF -j MASQUERADE
+            iptables -t nat -A POSTROUTING -s $innet -o $EXTIF -j SNAT --to 10.21.13.1-10.21.13.200
         done
     fi
   fi

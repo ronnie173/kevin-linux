@@ -76,19 +76,31 @@ foreach $_ (`cat /proc/interrupts | grep $nic`) {
 
     $goodCommand = 1;
     if ($nic_name =~ /TxRx-0/) {
-        $command = "echo 1 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 10 > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-1/) {
-        $command = "echo 2 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 20 > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-2/) {
-        $command = "echo 4 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 40 > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /TxRx-3/) {
-        $command = "echo 8 > /proc/irq/$int_num/smp_affinity";
+        $command = "echo 80 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-4/) {
+        $command = "echo 100 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-5/) {
+        $command = "echo 200 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-6/) {
+        $command = "echo 400 > /proc/irq/$int_num/smp_affinity";
+    }
+    elsif ($nic_name =~ /TxRx-7/) {
+        $command = "echo 800 > /proc/irq/$int_num/smp_affinity";
     }
     elsif ($nic_name =~ /^$nic$/) {
-        $command = "echo f > /proc/irq/$int_num/smp_affinity";
+        $command = "echo fffff0 > /proc/irq/$int_num/smp_affinity";
     }
     else {
         $goodCommand = 0;
