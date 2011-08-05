@@ -72,5 +72,6 @@ my $i;
 for ($i = $start; $i <= $end; $i++) {
     $command = "ip addr add $subnet$i/$netmask dev $nic";
     print "$command\n";
+    system($command);
 }
 
