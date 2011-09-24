@@ -14,71 +14,32 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h> /* includes net/ethernet.h */
+#include <netinet/ip.h>
+#include <time.h>
+#include <unistd.h>
 
-int main(int argc, char **argv) {
+int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
+int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet);
+
+int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
     int i;
-    char *dev;
-    char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t* descr;
-    const u_char *packet;
-    struct pcap_pkthdr hdr;
-    /* pcap.h */
     struct ether_header *eptr; /* net/ethernet.h */
     u_char *ptr; /* printing out hardware header info */
-    /* grab a device to peak into... */
-    dev = pcap_lookupdev(errbuf);
-    if(dev == NULL) {
-        printf("%s\n",errbuf);
-        exit(1);
-    }
-    printf("DEV: %s\n",dev);
-
-    descr = pcap_open_live(dev, BUFSIZ, 0, -1, errbuf);
-    if(descr == NULL) {
-        printf("pcap_open_live(): %s\n",errbuf);
-        exit(1);
-    }
-    /*
-    grab a packet from descr (yay!)
-    u_char *pcap_next(pcap_t *p,struct pcap_pkthdr *h)
-    so just pass in the descriptor we got from
-    our call to pcap_open_live and an allocated
-    struct pcap_pkthdr
-    */
-    packet = pcap_next(descr, &hdr);
-    if(packet == NULL) {
-        /* dinna work *sob* */
-        printf("Didn't grab packet\n");
-        exit(1);
-    }
+    
     /*
     struct pcap_pkthdr {
-    struct timeval ts;
-    time stamp
-    bpf_u_int32 caplen; length of portion present
-    bpf_u_int32;
-    lebgth this packet (off wire)
+        struct timeval ts;
+        time stamp
+        bpf_u_int32 caplen; length of portion present
+        bpf_u_int32;
+        lebgth this packet (off wire)
     }
     */
-    printf("Grabbed packet of length %d\n", hdr.len);
-    printf("Recieved at ..... %s\n",ctime((const time_t*)&hdr.ts.tv_sec));
-    printf("Ethernet address length is %d\n",ETHER_HDR_LEN);
+    printf("Grabbed packet of length %d\n", pkthdr->len);
+    printf("Recieved at ..... %s\n", ctime((const time_t*)&pkthdr->ts.tv_sec));
+    printf("Ethernet address length is %d\n", ETHER_HDR_LEN);
     /* lets start with the ether header... */
-    eptr = (struct ether_header *)packet;
-    /* Do a couple of checks to see what packet type we have..*/
-    if (ntohs (eptr->ether_type) == ETHERTYPE_IP) {
-        printf("Ethernet type hex:%x dec:%d is an IP packet\n",
-        ntohs(eptr->ether_type),
-        ntohs(eptr->ether_type));
-    } else if (ntohs (eptr->ether_type) == ETHERTYPE_ARP) {
-        printf("Ethernet type hex:%x dec:%d is an ARP packet\n",
-        ntohs(eptr->ether_type),
-        ntohs(eptr->ether_type));
-    }else {
-        printf("Ethernet type %x not IP", ntohs(eptr->ether_type));
-        exit(1);
-    }
-    /* THANK YOU RICHARD STEVENS!!! RIP*/
+    eptr = (struct ether_header*)packet;
     ptr = eptr->ether_dhost;
     i = ETHER_ADDR_LEN;
     printf(" Destination Address: ");
@@ -93,6 +54,102 @@ int main(int argc, char **argv) {
         printf("%s%x",(i == ETHER_ADDR_LEN) ? " " : ":",*ptr++);
     } while(--i > 0);
     printf("\n");
+
+    /* Do a couple of checks to see what packet type we have..*/
+    if (ntohs (eptr->ether_type) == ETHERTYPE_IP) {
+        printf("Ethernet type hex:%x dec:%d is an IP packet\n",
+        ntohs(eptr->ether_type),
+        ntohs(eptr->ether_type));
+        
+        handle_ip(pkthdr, packet);
+    } else if (ntohs (eptr->ether_type) == ETHERTYPE_ARP) {
+        printf("Ethernet type hex:%x dec:%d is an ARP packet\n",
+        ntohs(eptr->ether_type),
+        ntohs(eptr->ether_type));
+    }else {
+        printf("Ethernet type %x not IP", ntohs(eptr->ether_type));
+        exit(1);
+    }
+
+    return 0;
+}
+
+int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
+    int len;
+    struct ip *ip;
+    u_int length = pkthdr->len;
+    u_int hlen, off, version;
+
+    ip = (struct ip*)(packet + sizeof(struct ether_header));
+    length -= sizeof(struct ether_header);
+    
+    if (length < sizeof(struct ip)) {
+        printf("truncated ip %d\n", length);
+        return 1;
+    }
+    
+    len = ntohs(ip->ip_len);
+    hlen = ip->ip_hl;
+    version = ip->ip_v;
+    
+    if (version != 4) {
+        printf("Unknown version %d\n", version);
+        return 1;
+    }
+    
+    if (hlen < 5) {
+        printf("bad ip header length %d\n", hlen);
+    }
+    
+    if (length < len) {
+        printf("truncated ip %d bytes missing\n", len - length);
+    }
+    
+    off = ntohs(ip->ip_off);
+    if ((off & 0x1fff) == 0) {
+        printf("src ip: [%s], dst ip: [%s]\n", 
+            inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dst));
+        printf("header length: %d, version %d\n", hlen, version);
+        printf("ip packet length: %d, offset: %d\n", len, off);
+    }         
+            
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    char *dev;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t* handle;
+    const u_char *packet;
+    struct pcap_pkthdr hdr;
+    /* pcap.h */
+    /* grab a device to peak into... */
+    dev = pcap_lookupdev(errbuf);
+    if(dev == NULL) {
+        printf("%s\n",errbuf);
+        exit(1);
+    }
+    printf("DEV: %s\n",dev);
+
+    handle = pcap_open_live(dev, BUFSIZ, 0, 0, errbuf);
+    if(handle == NULL) {
+        printf("pcap_open_live(): %s\n", errbuf);
+        exit(1);
+    }
+
+    while (1) {
+        packet = pcap_next(handle, &hdr);
+        if (packet == NULL) {
+            /* dinna work *sob* */
+            printf("Didn't grab packet\n");
+            printf("err: %s\n", pcap_geterr(handle));
+            sleep(1);
+        } else {
+            handle_packet(&hdr, packet);
+        }
+    }
+        
+    pcap_close(handle);
     
     return 0;
 }
