@@ -15,11 +15,13 @@
 #include <arpa/inet.h>
 #include <netinet/if_ether.h> /* includes net/ethernet.h */
 #include <netinet/ip.h>
+#include <netinet/tcp.h>
 #include <time.h>
 #include <unistd.h>
 
 int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
 int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet);
+int handle_tcp(const u_char* packet);
 
 int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
     int i;
@@ -63,7 +65,7 @@ int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
         ntohs(eptr->ether_type),
         ntohs(eptr->ether_type));
         
-        handle_ip(pkthdr, packet);
+        handle_ip(pkthdr, packet + sizeof(struct ether_header));
     } else if (ntohs (eptr->ether_type) == ETHERTYPE_ARP) {
         printf("Ethernet type hex:%x dec:%d is an ARP packet\n",
         ntohs(eptr->ether_type),
@@ -77,13 +79,13 @@ int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
 }
 
 int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
-    int len;
+    int len, tmp;
     struct iphdr *iphead;
     u_int length = pkthdr->len;
     u_int hlen, off, version;
     struct in_addr addr;
     
-    iphead = (struct iphdr*)(packet + sizeof(struct ether_header));
+    iphead = (struct iphdr*)packet;
     length -= sizeof(struct ether_header);
     
     if (length < sizeof(struct iphdr)) {
@@ -117,7 +119,36 @@ int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
         printf("header length: %d, version %d\n", hlen, version);
         printf("ip packet length: %d, offset: %d\n", len, off);
     }         
-            
+    
+    if (IPPROTO_TCP == iphead->protocol) {
+        printf("this is a tcp packet\n");
+        tmp = sizeof(struct iphdr);
+        printf("ip header size is %d\n", tmp);
+        handle_tcp(packet + tmp);
+    } else {
+        printf("this is NOT a tcp packet, proto = %d\n", iphead->protocol);
+    }
+    
+    return 0;
+}
+
+int handle_tcp(const u_char* packet) {
+    struct tcphdr *tcphead;
+    
+    tcphead = (struct tcphdr*)packet;
+    if (1 == tcphead->syn) {
+        printf("this is a SYN packet\n");
+    } else if (1 == tcphead->fin) {
+        printf("this is a FIN packet\n");
+    } else if (1 == tcphead->rst) {
+        printf("this is a RST packet\n");
+    } else if (1 == tcphead->ack) {
+        printf("this is a ACK packet\n");
+    }
+    
+    printf("src port %d, dst port %d\n", ntohs(tcphead->source), 
+        ntohs(tcphead->dest));
+    
     return 0;
 }
 
@@ -145,6 +176,11 @@ int main(int argc, char **argv) {
 
     if (-1 == pcap_compile(handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN)) {
         printf("can not parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+        exit(1);
+    }
+    
+    if (-1 == pcap_setfilter(handle, &fp)) {
+        printf("can not set filter %s: %s\n", filter_exp, pcap_geterr(handle));
         exit(1);
     }
     
