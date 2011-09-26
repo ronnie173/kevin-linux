@@ -35,6 +35,7 @@ int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
         lebgth this packet (off wire)
     }
     */
+    printf("====================================================\n");
     printf("Grabbed packet of length %d\n", pkthdr->len);
     printf("Recieved at ..... %s\n", ctime((const time_t*)&pkthdr->ts.tv_sec));
     printf("Ethernet address length is %d\n", ETHER_HDR_LEN);
@@ -76,21 +77,22 @@ int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
 
 int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
     int len;
-    struct ip *ip;
+    struct iphdr *iphead;
     u_int length = pkthdr->len;
     u_int hlen, off, version;
-
-    ip = (struct ip*)(packet + sizeof(struct ether_header));
+    struct in_addr addr;
+    
+    iphead = (struct iphdr*)(packet + sizeof(struct ether_header));
     length -= sizeof(struct ether_header);
     
-    if (length < sizeof(struct ip)) {
+    if (length < sizeof(struct iphdr)) {
         printf("truncated ip %d\n", length);
         return 1;
     }
     
-    len = ntohs(ip->ip_len);
-    hlen = ip->ip_hl;
-    version = ip->ip_v;
+    len = ntohs(iphead->tot_len);
+    hlen = iphead->ihl;
+    version = iphead->version;
     
     if (version != 4) {
         printf("Unknown version %d\n", version);
@@ -105,10 +107,12 @@ int handle_ip(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
         printf("truncated ip %d bytes missing\n", len - length);
     }
     
-    off = ntohs(ip->ip_off);
+    off = ntohs(iphead->frag_off);
     if ((off & 0x1fff) == 0) {
-        printf("src ip: [%s], dst ip: [%s]\n", 
-            inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dst));
+        addr.s_addr = iphead->saddr;
+        printf("src ip: [%s], ", inet_ntoa(addr));
+        addr.s_addr = iphead->daddr;
+        printf("dst ip: [%s]\n", inet_ntoa(addr));
         printf("header length: %d, version %d\n", hlen, version);
         printf("ip packet length: %d, offset: %d\n", len, off);
     }         
@@ -122,8 +126,9 @@ int main(int argc, char **argv) {
     pcap_t* handle;
     const u_char *packet;
     struct pcap_pkthdr hdr;
-    /* pcap.h */
-    /* grab a device to peak into... */
+    char filter_exp[] = "port 80";
+    struct bpf_program fp;
+    
     dev = pcap_lookupdev(errbuf);
     if(dev == NULL) {
         printf("%s\n",errbuf);
@@ -137,6 +142,11 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    if (-1 == pcap_compile(handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN)) {
+        printf("can not parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+        exit(1);
+    }
+    
     while (1) {
         packet = pcap_next(handle, &hdr);
         if (packet == NULL) {
