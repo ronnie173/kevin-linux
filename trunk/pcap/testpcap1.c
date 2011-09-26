@@ -37,8 +37,9 @@ int handle_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
     */
     printf("====================================================\n");
     printf("Grabbed packet of length %d\n", pkthdr->len);
+    printf("caplen %d\n", pkthdr->caplen);
     printf("Recieved at ..... %s\n", ctime((const time_t*)&pkthdr->ts.tv_sec));
-    printf("Ethernet address length is %d\n", ETHER_HDR_LEN);
+    //printf("Ethernet address length is %d\n", ETHER_HDR_LEN);
     /* lets start with the ether header... */
     eptr = (struct ether_header*)packet;
     ptr = eptr->ether_dhost;
