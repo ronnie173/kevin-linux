@@ -9,7 +9,7 @@ PROGS =	ShareParam
 all:	${PROGS}
 
 ShareParam:	ShareParam.o
-	${CC} ${CFLAGS} -o $@ ShareParam.o -lthread
+	${CC} ${CFLAGS} -o $@ ShareParam.o -lpthread
     
 myzip:
 	tar cvzf ThreadTest.tgz Makefile README *.c *.h
