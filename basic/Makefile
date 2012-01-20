@@ -4,7 +4,8 @@ LIB_OBJS =
 
 CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~ *~ *.stackdump
 
-PROGS =	structTest sortTest strTest funcTest arrayTest byteTest getOptTest
+PROGS =	structTest sortTest strTest funcTest arrayTest byteTest getOptTest \
+        VarArgument BackTrace
 
 all:	${PROGS}
 
@@ -28,6 +29,12 @@ byteTest:	byteTest.o
 
 getOptTest:	getOptTest.o
 	${CC} ${CFLAGS} -o $@ getOptTest.o
+
+VarArgument:	VarArgument.o
+	${CC} ${CFLAGS} -o $@ VarArgument.o
+
+BackTrace:	BackTrace.o
+	${CC} ${CFLAGS} -o $@ BackTrace.o
 
 myzip:
 	tar cvzf basic.tgz Makefile README *.c *.h
