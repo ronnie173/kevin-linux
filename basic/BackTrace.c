@@ -16,16 +16,16 @@ static void test2() {
 }
 
 static void test1() {
-    int a=0x11111111;
-    int b=0x11111112;
+    int a = 0x11111111;
+    int b = 0x11111112;
     test2();
     a = b;
     return;
 }
 
 static void test() {
-    int a=0x10000000;
-    int b=0x10000002;
+    int a = 0x10000000;
+    int b = 0x10000002;
     test1();
     a = b;
     return;

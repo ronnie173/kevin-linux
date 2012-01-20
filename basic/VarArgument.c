@@ -4,7 +4,7 @@
 int accumlate(int nr, ...) {
     int i = 0;
     int result = 0;
-    va_list arg = NULL;
+    va_list arg;
     va_start(arg, nr);
 
     for(i = 0; i < nr; i++) {
