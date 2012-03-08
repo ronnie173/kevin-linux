@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -O0
 LIB_OBJS =
 
 CLEANFILES = core core.* *.core *.o temp.* *.out *.exe *.*~ *~ *.stackdump
