@@ -4,11 +4,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #define NETLINK_NITRO 17
 #define MAX_PAYLOAD 2048
 
-int main() {
+void printUsage() {
+    printf("user_space_write pid\n");
+}
+
+int main(int argc, char* argv[]) {
+    pid_t destPID = 0; // to kernel by default
+    if (argc < 2) {
+        printUsage();
+    } else {
+        destPID = atoi(argv[1]);
+        printf("dest pid is [%d]\n", destPID);
+    }
+
     struct sockaddr_nl s_nladdr, d_nladdr;
     struct msghdr msg ;
     struct nlmsghdr *nlh = NULL ;
@@ -16,17 +29,17 @@ int main() {
     int fd=socket(AF_NETLINK ,SOCK_RAW , NETLINK_NITRO );
 
     /* source address */
-    memset(&s_nladdr, 0 ,sizeof(s_nladdr));
+    memset(&s_nladdr, 0, sizeof(s_nladdr));
     s_nladdr.nl_family = AF_NETLINK ;
     s_nladdr.nl_pad = 0;
     s_nladdr.nl_pid = getpid();
     bind(fd, (struct sockaddr*)&s_nladdr, sizeof(s_nladdr));
 
     /* destination address */
-    memset(&d_nladdr, 0 ,sizeof(d_nladdr));
-    d_nladdr.nl_family= AF_NETLINK ;
-    d_nladdr.nl_pad=0;
-    d_nladdr.nl_pid = 0; /* destined to kernel */
+    memset(&d_nladdr, 0, sizeof(d_nladdr));
+    d_nladdr.nl_family = AF_NETLINK ;
+    d_nladdr.nl_pad = 0;
+    d_nladdr.nl_pid = destPID; /* destined to kernel */
 
     /* Fill the netlink message header */
     nlh = (struct nlmsghdr *)malloc(100);
