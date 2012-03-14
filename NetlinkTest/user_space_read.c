@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define NETLINK_NITRO 17
+#define NETLINK_NITRO 27
 #define MAX_PAYLOAD 2048
 
 int main() {
@@ -20,7 +20,10 @@ int main() {
     memset(&s_nladdr, 0 ,sizeof(s_nladdr));
     s_nladdr.nl_family = AF_NETLINK ;
     s_nladdr.nl_pad = 0;
-    s_nladdr.nl_pid = getpid();
+    pid_t srcPID = getpid();
+    printf("pid is [%d]\n", srcPID);
+    s_nladdr.nl_pid = srcPID;
+    s_nladdr.nl_groups = 0;
     bind(fd, (struct sockaddr*)&s_nladdr, sizeof(s_nladdr));
 
     /* destination address */
