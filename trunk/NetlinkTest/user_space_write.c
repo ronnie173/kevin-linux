@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define NETLINK_NITRO 27
+//#define NETLINK_NITRO 27
 #define MAX_PAYLOAD 2048
 
 void printUsage() {
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     struct msghdr msg ;
     struct nlmsghdr *nlh = NULL ;
     struct iovec iov;
-    int fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_NITRO);
+    int fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
     /* source address */
     memset(&s_nladdr, 0, sizeof(s_nladdr));
@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
     msg.msg_iovlen = 1;
     sendmsg(fd, &msg, 0);
 
+    free(nlh);
     close(fd);
     return(EXIT_SUCCESS);
 }
