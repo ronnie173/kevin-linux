@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-//#define NETLINK_NITRO 27
+#define NETLINK_KEVIN 27
 #define MAX_PAYLOAD 2048
 
 int main() {
@@ -14,7 +14,9 @@ int main() {
     struct msghdr msg;
     struct nlmsghdr *nlh = NULL;
     struct iovec iov;
+    // protocol must be defined in netlink.h
     int fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
+    //int fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_KEVIN);
 
     /* source address */
     memset(&s_nladdr, 0 ,sizeof(s_nladdr));
@@ -45,7 +47,8 @@ int main() {
         printf("no msg, wait ... \n");
         sleep(2);
     }
-    printf("receive [%s]\n", (char*)NLMSG_DATA(nlh));
+    printf("receive [%s] from pid=[%d] and flag=[%d]\n", 
+            (char*)NLMSG_DATA(nlh), nlh->nlmsg_pid, nlh->nlmsg_flags);
 
     free(nlh);
     close(fd);
