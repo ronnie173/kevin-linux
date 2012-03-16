@@ -1,25 +1,26 @@
 #include <sys/types.h>
 #include <sys/socket.h>
-//#include <sys/un.h>
-#include <ipv6.h>
+//#include <linux/in6.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-//#include <netinet/in.h>
-#include <netinet/tcp.h>       /* for TCP_xxx defines */
+//#include <netinet/tcp.h>       /* for TCP_xxx defines */
+#include <linux/tcp.h>
 
 union val {
     int               i_val;
     long              l_val;
     struct linger     linger_val;
     struct timeval    timeval_val;
+    struct tcp_info   info_val;
 } val;
 
 static char *sock_str_flag(union val *, int);
 static char *sock_str_int(union val *, int);
 static char *sock_str_linger(union val *, int);
 static char *sock_str_timeval(union val *, int);
+static char *sock_str_info(union val *, int);
 
 struct sock_opts {
     const char  *opt_str;
@@ -47,19 +48,22 @@ struct sock_opts {
     { "SO_REUSEPORT",        0,          0,              NULL },
 #endif
     { "SO_TYPE",             SOL_SOCKET, SO_TYPE,        sock_str_int },
-    { "SO_USELOOPBACK",      SOL_SOCKET, SO_USELOOPBACK, sock_str_flag },
+//    { "SO_USELOOPBACK",      SOL_SOCKET, SO_USELOOPBACK, sock_str_flag },
     { "IP_TOS",              IPPROTO_IP, IP_TOS,         sock_str_int },
     { "IP_TTL",              IPPROTO_IP, IP_TTL,         sock_str_int },
-    { "IPV6_DONTFRAG",       IPPROTO_IPV6,IPV6_DONTFRAG, sock_str_flag },
-    { "IPV6_UNICAST_HOPS",   IPPROTO_IPV6,IPV6_UNICAST_HOPS,sock_str_int },
-    { "IPV6_V6ONLY",         IPPROTO_IPV6,IPV6_V6ONLY,   sock_str_flag },
-    { "TCP_MAXSEG",          IPPROTO_TCP,TCP_MAXSEG,     sock_str_int },
-    { "TCP_NODELAY",         IPPROTO_TCP,TCP_NODELAY,    sock_str_flag },
-    { "SCTP_AUTOCLOSE",      IPPROTO_SCTP,SCTP_AUTOCLOSE,sock_str_int },
-    { "SCTP_MAXBURST",       IPPROTO_SCTP,SCTP_MAXBURST, sock_str_int },
-    { "SCTP_MAXSEG",         IPPROTO_SCTP,SCTP_MAXSEG,   sock_str_int },
-    { "SCTP_NODELAY",        IPPROTO_SCTP,SCTP_NODELAY,  sock_str_flag },
-    { NULL,                  0,          0,              NULL }
+//    { "IPV6_DONTFRAG",       IPPROTO_IPV6,IPV6_DONTFRAG, sock_str_flag },
+//    { "IPV6_UNICAST_HOPS",   IPPROTO_IPV6,IPV6_UNICAST_HOPS,sock_str_int },
+//    { "IPV6_V6ONLY",         IPPROTO_IPV6,IPV6_V6ONLY,   sock_str_flag },
+    // TCP related options
+    { "TCP_CORK",           IPPROTO_TCP, TCP_CORK,      sock_str_flag },
+    { "TCP_DEFER_ACCEPT", IPPROTO_TCP, TCP_DEFER_ACCEPT, sock_str_flag },
+    { "TCP_INFO",           IPPROTO_TCP, TCP_INFO,      sock_str_info },
+    { "TCP_KEEPCNT",        IPPROTO_TCP, TCP_KEEPCNT,   sock_str_int },
+    { "TCP_KEEPIDLE",       IPPROTO_TCP, TCP_KEEPIDLE,  sock_str_int },
+    { "TCP_KEEPINTVL",      IPPROTO_TCP, TCP_KEEPINTVL, sock_str_int },
+    { "TCP_MAXSEG",         IPPROTO_TCP,TCP_MAXSEG,     sock_str_int },
+    { "TCP_NODELAY",        IPPROTO_TCP,TCP_NODELAY,    sock_str_flag },
+    { NULL,                 0,          0,              NULL }
 };
 
 int main(int argc, char **argv) {
@@ -146,3 +150,17 @@ static char *sock_str_timeval(union val *ptr, int len) {
             (int)tvptr->tv_sec, (int)tvptr->tv_usec);
     return(strres);
 }
+
+static char *sock_str_info(union val *ptr, int len) {
+    struct tcp_info *tvptr = &ptr->info_val;
+
+    if (len != sizeof(struct tcp_info)) {
+        snprintf(strres, sizeof(strres),
+            "size (%d) not sizeof(struct tcp_info)", len);
+    } else {
+        snprintf(strres, sizeof(strres), "sacked: %d, retrans: %d",
+            (int)tvptr->tcpi_sacked, (int)tvptr->tcpi_retrans);
+    }
+    return(strres);
+}
+
