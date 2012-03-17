@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 //#include <netinet/tcp.h>       /* for TCP_xxx defines */
 #include <linux/tcp.h>
+#include <linux/udp.h>
 
 union val {
     int               i_val;
@@ -61,8 +62,14 @@ struct sock_opts {
     { "TCP_KEEPCNT",        IPPROTO_TCP, TCP_KEEPCNT,   sock_str_int },
     { "TCP_KEEPIDLE",       IPPROTO_TCP, TCP_KEEPIDLE,  sock_str_int },
     { "TCP_KEEPINTVL",      IPPROTO_TCP, TCP_KEEPINTVL, sock_str_int },
-    { "TCP_MAXSEG",         IPPROTO_TCP,TCP_MAXSEG,     sock_str_int },
-    { "TCP_NODELAY",        IPPROTO_TCP,TCP_NODELAY,    sock_str_flag },
+    { "TCP_LINGER2",        IPPROTO_TCP, TCP_LINGER2,   sock_str_int },
+    { "TCP_MAXSEG",         IPPROTO_TCP, TCP_MAXSEG,    sock_str_int },
+    { "TCP_NODELAY",        IPPROTO_TCP, TCP_NODELAY,   sock_str_flag },
+    { "TCP_QUICKACK",       IPPROTO_TCP, TCP_QUICKACK,  sock_str_flag },
+    { "TCP_SYNCNT",         IPPROTO_TCP, TCP_SYNCNT,    sock_str_int },
+    { "TCP_WINDOW_CLAMP",   IPPROTO_TCP, TCP_WINDOW_CLAMP,    sock_str_int },
+    // UDP related options
+    { "UDP_CORK",           IPPROTO_UDP, UDP_CORK,      sock_str_flag },
     { NULL,                 0,          0,              NULL }
 };
 
@@ -92,7 +99,11 @@ int main(int argc, char **argv) {
                 fd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
                 break;
 #endif
-            default:
+            case IPPROTO_UDP:
+                fd = socket(AF_INET, SOCK_DGRAM, 0);
+                break;
+
+           default:
                 printf("Can't create fd for level %d\n", ptr->opt_level);
                 exit(1);
             }
