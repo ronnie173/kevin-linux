@@ -24,35 +24,56 @@ void printListReverse(struct list_head *theList) {
     }
 }
 
+void cleanList(struct list_head *list) {
+    struct msg *tmpMsg;
+    struct list_head *pos, *npos;
+    list_for_each_safe(pos, npos, list) {
+        tmpMsg = list_entry(pos, struct msg, list);
+        list_del(pos);
+        free(tmpMsg);
+    }
+
+    return;
+}
+
 int main(int argc, char* argv[]) {
     int i;
-    struct msg *myMsg;
-    struct list_head *pos, *npos;
+    struct msg myMsg, *tmpMsg;
 
     LIST_HEAD(myList);
+    INIT_LIST_HEAD(&(myMsg.list));
+    snprintf(myMsg.message, 20, "First");
 
     for (i = 0; i < 10; i++) {
-        myMsg = (struct msg *)malloc(sizeof(struct msg));
-        snprintf(myMsg->message, 20, "Kevin %d", i);
-        //INIT_LIST_HEAD(&(myMsg->list));
-        list_add_tail(&(myMsg->list), &myList);
+        tmpMsg = (struct msg *)malloc(sizeof(struct msg));
+        snprintf(tmpMsg->message, 20, "Kevin %d", i);
+        //INIT_LIST_HEAD(&(tmpMsg->list));
+        //list_add_tail(&(tmpMsg->list), &myList);
+        INIT_LIST_HEAD(&(tmpMsg->list));
+        list_add_tail(&(tmpMsg->list), &(myMsg.list));
     }
 
-    printf("=== print the list ===\n");
-    printList(&myList);
+    printf("=== print the myList ===\n");
+    //printList(&myList);
+
+    printf("=== print the myMsg List ===\n");
+    printList(&(myMsg.list));
+
 
     printf("=== print the list reverse ===\n");
-    printListReverse(&myList);
+    //printListReverse(&myList);
 
-    list_for_each_safe(pos, npos, &myList) {
-        myMsg = list_entry(pos, struct msg, list);
-        list_del(pos);
-        free(myMsg);
-    }
+    //cleanList(&(myList));
+    cleanList(&(myMsg.list));
 
     if (list_empty(&myList)) {
-        printf("the list is empty\n");
+        printf("the myList is empty\n");
     }
+
+    if (list_empty(&(myMsg.list))) {
+        printf("the myMsg.list is empty\n");
+    }
+
 
     return 0;
 }
